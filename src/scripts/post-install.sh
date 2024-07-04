@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Final system update
-sudo pacman -Syu --noconfirm && yay -Yc --noconfirm
+sudo dnf update -y && sudo dnf upgrade -y && sudo dnf autoremove -y
 
 workingDirectory=$1
 
@@ -22,4 +22,3 @@ printf "\n\n====================================================================
 
 printf "Cheers -- system setup is now complete.\n\r"
 printf "Log out and log back in to complete shell change.\n"
-printf "When logged back in, restart shell to complete powerlevel10k configuration.\n"

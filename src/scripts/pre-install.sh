@@ -3,16 +3,8 @@
 workingDirectory=$1
 
 # Initial system update
-sudo pacman -Syu --noconfirm && yay -Yc --noconfirm
+sudo dnf update -y && sudo dnf upgrade -y && sudo dnf autoremove -y
 
-if [[ ! -f "/usr/bin/yay" ]]; then
-    sudo pacman -S base-devel --noconfirm
-    sudo pacman -S git --noconfirm
-
-    cd "$HOME/Downloads" || return
-    git clone https://aur.archlinux.org/yay.git
-    cd yay || return
-    makepkg -sri --noconfirm
-
-    cd "$workingDirectory" || return
+if [[ ! -f "/usr/bin/git" ]]; then
+    sudo dnf install git -y
 fi
