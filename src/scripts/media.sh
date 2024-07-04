@@ -2,10 +2,10 @@
 
 # Spotify
 if [[ ! -d "/usr/bin/spotify-launcher" ]]; then
-    sudo pacman -S spotify-launcher --noconfirm
+    # sudo dnf install spotify -y
 fi
 
 # VLC
 if [[ ! -f "/usr/bin/vlc" ]]; then
-    sudo pacman -S vlc --noconfirm
+    sudo dnf install vlc -y
 fi

@@ -21,15 +21,15 @@ cd "$workingDirectory" || return
 
 # Burp Suite
 if [[ ! -f "/usr/bin/burpsuite" ]]; then
-    yay -S burpsuite --noconfirm
+    # TODO
 fi
 
 # Network Mapper
 if [[ ! -f "/usr/bin/nmap" ]]; then
-    sudo pacman -S nmap --noconfirm
+    sudo dnf install nmap -y
 fi
 
 # ZAP
 if [[ ! -f "/usr/bin/zaproxy" ]]; then
-    sudo pacman -S zaproxy --noconfirm
+    flatpak install flathub org.zaproxy.ZAP
 fi

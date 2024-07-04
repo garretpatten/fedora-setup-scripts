@@ -15,7 +15,7 @@ fi
 
 ### Runtimes ###
 
-# Node.js && npm
+# Node.js & npm
 if [[ ! -f "/usr/bin/node" ]]; then
     sudo dnf module install nodejs:18/common -y
 fi
@@ -23,6 +23,7 @@ fi
 # Python & pip
 if [[ ! -f "/usr/bin/python" ]]; then
     sudo dnf install python3 -y
+    sudo dnf install python3-pip -y
 fi
 
 ### Frameworks ###
