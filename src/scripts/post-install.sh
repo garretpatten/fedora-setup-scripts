@@ -1,9 +1,9 @@
 #!/bin/bash
 
+workingDirectory=$1
+
 # Final system update
 sudo dnf update -y && sudo dnf upgrade -y && sudo dnf autoremove -y
-
-workingDirectory=$1
 
 printf "\n\n============================================================================\n\n"
 

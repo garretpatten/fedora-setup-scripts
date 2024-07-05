@@ -2,7 +2,7 @@
 
 workingDirectory=$(pwd)
 
-bash "$workingDirectory/src/scripts/pre-install.sh" "$workingDirectory"
+bash "$workingDirectory/src/scripts/pre-install.sh"
 
 # Home directory customization
 bash "$workingDirectory/src/scripts/organizeHome.sh"
