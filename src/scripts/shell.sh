@@ -56,5 +56,5 @@ if [[ ! -d "$HOME/.config/alacritty/" ]]; then
     cp "$workingDirectory/src/dotfiles/alacritty/alacritty.toml" "$HOME/.config/alacritty/alacritty.toml"
 fi
 
-# Update ~/.zshrc
+# Zsh configuration
 cp "$workingDirectory/src/dotfiles/oh-my-posh/.zshrc" "$HOME/.zshrc"
