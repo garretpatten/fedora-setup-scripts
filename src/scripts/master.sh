@@ -29,7 +29,7 @@ bash "$workingDirectory/src/scripts/ide.sh" "$workingDirectory"
 bash "$workingDirectory/src/scripts/dev.sh"
 
 # Penetration testing tools and wordlists
-bash "$workingDirectory/src/scripts/hacking.sh" "$workingDirectory"
+bash "$workingDirectory/src/scripts/hacking.sh"
 
 zsh "$workingDirectory/src/scripts/shell.sh" "$workingDirectory"
 

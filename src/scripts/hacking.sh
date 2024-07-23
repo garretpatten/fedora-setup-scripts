@@ -1,7 +1,5 @@
 #!/bin/bash
 
-workingDirectory=$1
-
 ### Payloads ###
 
 # Payloads All the Things
@@ -11,13 +9,6 @@ git clone https://github.com/swisskyrepo/PayloadsAllTheThings "$HOME/Hacking/"
 git clone https://github.com/danielmiessler/SecLists "$HOME/Hacking/"
 
 ### Tools ###
-
-# Black Arch tools
-cd "$HOME/Hacking/" || return
-curl -O https://blackarch.org/strap.sh
-chmod +x strap.sh
-sudo ./strap.sh
-cd "$workingDirectory" || return
 
 # Burp Suite
 if [[ ! -f "/usr/bin/burpsuite" ]]; then

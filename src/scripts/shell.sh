@@ -12,38 +12,38 @@ fi
 
 # Awesome Terminal Fonts
 if [[ ! -d "/usr/share/fonts/awesome-terminal-fonts/" ]]; then
-    sudo pacman -S awesome-terminal-fonts --noconfirm
+    # TODO
 fi
 
 # Fira Code Fonts
 if [[ ! -d "/usr/share/fonts/FiraCode/" ]]; then
-    yay -S ttf-firacode --noconfirm
+    # TODO
 fi
 
 if [[ ! -d "/usr/share/fonts/TTF/" ]]; then
-    yay -S ttf-meslo-nerd --noconfirm
+    # TODO
 fi
 
 # Powerline Fonts
 if [[ ! -d "/usr/share/fonts/OTF/" ]]; then
-    sudo pacman -S powerline-fonts --noconfirm
+    sudo dnf install powerline-fonts -y
 fi
 
 ### Install oh-my-posh ###
 if [[ ! -f "/usr/bin/oh-my-posh" ]]; then
-    yay -S oh-my-posh --noconfirm
+    # TODO
 fi
 
 ### Zsh Plugins ###
 
 # Zsh Autosuggestions
 if [[ ! -d "/usr/share/zsh/plugins/zsh-autosuggestions/" ]]; then
-    sudo pacman -S zsh-autosuggestions --noconfirm
+    sudo dnf install zsh-autosuggestions -y
 fi
 
 # Zsh Syntax Highlighting
 if [[ ! -d "/usr/share/zsh/plugins/zsh-syntax-highlighting/" ]]; then
-    sudo pacman -S zsh-syntax-highlighting --noconfirm
+    sudo dnf install zsh-syntax-highlighting -y
 fi
 
 ### Terminal Configuration ###
