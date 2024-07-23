@@ -9,7 +9,7 @@ for directoryToRemove in "${directoriesToRemove[@]}"; do
 done
 
 # Add needed directories.
-directoriesToCreate=("AppImages" "AUR" "Books" "Games" "Hacking" "Projects" "Writing")
+directoriesToCreate=("AppImages" "Books" "Games" "Hacking" "Projects" "Writing")
 for directoryToCreate in "${directoriesToCreate[@]}"; do
     if [[ ! -d "$HOME/$directoryToCreate/" ]]; then
         mkdir "$HOME/$directoryToCreate"

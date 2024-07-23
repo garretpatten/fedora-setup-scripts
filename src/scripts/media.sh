@@ -2,7 +2,7 @@
 
 # Spotify
 if [[ ! -d "/usr/bin/spotify-launcher" ]]; then
-    # sudo dnf install spotify -y
+    sudo dnf install spotify -y
 fi
 
 # VLC
