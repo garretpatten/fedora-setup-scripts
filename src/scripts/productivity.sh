@@ -4,7 +4,7 @@ workingDirectory=$1
 
 # Taskwarrior
 if [[ ! -f "/usr/bin/task" ]]; then
-    sudo pacman -S task --noconfirm
+    sudo dnf install task -y
 
     # Add custom themes
     mkdir -p "$HOME/.task/themes/"
@@ -33,13 +33,10 @@ fi
 
 # Timeshift
 if [[ ! -f "/usr/bin/timeshift" ]]; then
-    sudo pacman -S timeshift --noconfirm
+    sudo dnf install timeshift -y
 fi
 
 # Todoist
 if [[ ! -f "/usr/bin/todoist" ]]; then
-    cd "$HOME/AppImages" || return
-    wget https://todoist.com/linux_app/appimage
-    sudo mv appimage /usr/bin/todoist
-    cd "$workingDirectory" || return
+    # TODO: Install Todoist
 fi
