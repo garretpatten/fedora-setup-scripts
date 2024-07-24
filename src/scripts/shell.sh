@@ -31,7 +31,7 @@ fi
 
 ### Install oh-my-posh ###
 if [[ ! -f "/usr/bin/oh-my-posh" ]]; then
-    # TODO
+    curl -s https://ohmyposh.dev/install.sh | bash -s
 fi
 
 ### Zsh Plugins ###
