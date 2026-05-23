@@ -30,7 +30,8 @@ protonvpn_repo_installed=0
 for proton_url in "${protonvpn_repo_urls[@]}"; do
     [[ -z "$proton_url" ]] && continue
     rm -f "$protonvpn_release_rpm" 2>/dev/null || true
-    if curl -fsSL --connect-timeout 30 --max-time 120 "$proton_url" -o "$protonvpn_release_rpm" && [[ -s "$protonvpn_release_rpm" ]]; then
+    if curl -fsSL --connect-timeout 30 --max-time 120 "$proton_url" -o "$protonvpn_release_rpm" 2>/dev/null \
+        && [[ -s "$protonvpn_release_rpm" ]]; then
         pp_r_tmp=$(mktemp)
         if { sudo rpm -Uvh "$protonvpn_release_rpm"; } >>"$pp_r_tmp" 2>&1 \
             || { sudo rpm -ivh "$protonvpn_release_rpm"; } >>"$pp_r_tmp" 2>&1; then
@@ -86,7 +87,7 @@ proton_pass_resolve_latest_stable_rpm_url() {
         rm -f "$json_path" 2>/dev/null || true
         if ! curl -fsSL --connect-timeout 30 --max-time 120 --retry 3 --retry-delay 2 \
             -A "Mozilla/5.0 (X11; Linux x86_64)" \
-            "$base_url" -o "$json_path"; then
+            "$base_url" -o "$json_path" 2>/dev/null; then
             continue
         fi
         [[ -s "$json_path" ]] || continue
@@ -130,7 +131,7 @@ for proton_pass_url in "${proton_pass_urls[@]}"; do
     rm -f "$proton_pass_rpm" 2>/dev/null || true
     if curl -fsSL --connect-timeout 30 --max-time 600 --retry 3 --retry-delay 2 --retry-all-errors \
         -A "Mozilla/5.0 (X11; Linux x86_64)" \
-        "$proton_pass_url" -o "$proton_pass_rpm" && proton_pass_is_valid_rpm "$proton_pass_rpm"; then
+        "$proton_pass_url" -o "$proton_pass_rpm" 2>/dev/null && proton_pass_is_valid_rpm "$proton_pass_rpm"; then
         proton_pass_downloaded=1
         break
     fi
@@ -145,7 +146,7 @@ else
 fi
 
 proton_pass_cli="$TEMP_DIR/proton-pass-cli"
-proton_pass_cli_url=$(curl -fsSL https://api.github.com/repos/protonpass/cli/releases/latest \
+proton_pass_cli_url=$(curl -fsSL https://api.github.com/repos/protonpass/cli/releases/latest 2>/dev/null \
     | grep "browser_download_url.*linux-amd64" | cut -d '"' -f 4 || true)
 if [[ -n "$proton_pass_cli_url" ]]; then
     download_file_safe "$proton_pass_cli_url" "$proton_pass_cli"
