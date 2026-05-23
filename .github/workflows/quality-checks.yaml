@@ -1,11 +1,11 @@
 ---
-name: 'Quality Checks'
+name: "Quality Checks"
 
 on: [pull_request]
 
 jobs:
   quality-checks:
-    name: 'Linters'
+    name: "Linters"
     # yamllint disable-line rule:line-length
     uses: garretpatten/quality-checks/.github/workflows/quality-checks.yaml@master
     with:

@@ -1,6 +1,6 @@
 # yamllint disable-file rule:line-length
 ---
-name: 'Test Runner'
+name: "Test Runner"
 
 on:
   push:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   test:
-    name: 'Test Fedora Setup Scripts'
+    name: "Test Fedora Setup Scripts"
     runs-on: ubuntu-latest
     timeout-minutes: 60
     container:
