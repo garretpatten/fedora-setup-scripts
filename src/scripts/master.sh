@@ -1,36 +1,38 @@
 #!/bin/bash
 
-workingDirectory=$(pwd)
+# Full provisioning: interleaved installs and configuration — same chronological
+# idea as ubuntu-setup-scripts (`master.sh`): defaults and home layout early;
+# dev dotfiles immediately after development packages; shell dotfiles after
+# dnf maintenance/post-install hooks.
 
-bash "$workingDirectory/src/scripts/pre-install.sh"
+# shellcheck source=utils.sh
+source "$(dirname "$0")/utils.sh"
 
-# Home directory customization
-bash "$workingDirectory/src/scripts/organizeHome.sh"
+ROOT="$(dirname "$0")"
+IDIR="$ROOT/install"
+CDIR="$ROOT/config"
 
-# CLI tools
-bash "$workingDirectory/src/scripts/cli.sh"
+run() {
+    bash "$1" 2>>"$ERROR_LOG_FILE" || log_error "Failed to execute $1"
+}
 
-# Browser
-bash "$workingDirectory/src/scripts/web.sh"
+run "$IDIR/pre-install.sh"
 
-# Streaming and video applications
-bash "$workingDirectory/src/scripts/media.sh"
+run "$CDIR/system-config.sh"
+run "$CDIR/organizeHome.sh"
 
-# Productivity programs
-bash "$workingDirectory/src/scripts/productivity.sh" "$workingDirectory"
+run "$IDIR/cli.sh"
+run "$IDIR/media.sh"
+run "$IDIR/productivity.sh"
 
-# Security and privacy utilities
-bash "$workingDirectory/src/scripts/security.sh" "$workingDirectory"
+run "$IDIR/dev.sh"
+run "$CDIR/dev.sh"
 
-# IDE setup
-bash "$workingDirectory/src/scripts/ide.sh" "$workingDirectory"
+run "$IDIR/security.sh"
+run "$CDIR/security.sh"
 
-# Dev tools
-bash "$workingDirectory/src/scripts/dev.sh"
+run "$IDIR/shell.sh"
 
-# Penetration testing tools and wordlists
-bash "$workingDirectory/src/scripts/hacking.sh"
+run "$IDIR/post-install.sh"
 
-zsh "$workingDirectory/src/scripts/shell.sh" "$workingDirectory"
-
-bash "$workingDirectory/src/scripts/post-install.sh" "$workingDirectory"
+run "$CDIR/shell.sh"

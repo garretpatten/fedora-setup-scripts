@@ -1,0 +1,214 @@
+#!/bin/bash
+
+# Global configuration — this file lives at src/scripts/utils.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
+readonly SCRIPT_DIR
+readonly SCRIPTS_DIR="$SCRIPT_DIR"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)" || exit 1
+readonly PROJECT_ROOT
+readonly ERROR_LOG_FILE="${PROJECT_ROOT}/setup_errors.log"
+readonly TEMP_DIR="/tmp/fedora-setup-$$"
+
+# Color codes for output formatting
+readonly COLOR_RED='\033[0;31m'
+readonly COLOR_NC='\033[0m' # No Color
+
+# Log errors only
+log_error() {
+    echo -e "${COLOR_RED}[ERROR]${COLOR_NC} $*" >&2
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*" >>"$ERROR_LOG_FILE"
+}
+
+# DNF emits progress bars to stderr; only append transcripts to setup_errors.log on failure.
+install_dnf_packages() {
+    local packages=("$@")
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf install -y "${packages[@]}"; } >"$tmp" 2>&1; then
+        {
+            echo "----"
+            printf 'dnf install -y'
+            printf ' %q' "${packages[@]}"
+            printf '\n'
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
+        log_error "Failed to install packages: ${packages[*]}"
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+# Refresh repository metadata / cache (best-effort; does not insist on freshest metadata elsewhere)
+update_dnf_cache() {
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf makecache -y; } >"$tmp" 2>&1; then
+        {
+            echo "---- dnf makecache -y"
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
+        log_error "Failed to refresh dnf cache"
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+# Noisy upgrades/autoremoves: keep CI error logs clean unless the transaction fails.
+dnf_quiet_best_effort() {
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf "$@"; } >"$tmp" 2>&1; then
+        {
+            printf '---- sudo dnf'
+            printf ' %q' "$@"
+            printf '\n'
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+systemd_running_pid1() {
+    local comm
+    comm="$(ps --no-headers -o comm 1 2>/dev/null | head -n1 | tr -d '[:space:]')"
+    [[ "${comm%/}" == "systemd" ]]
+}
+
+# UFW needs a working iptables filter table (fails inside many containers / hardened CI kernels).
+ufw_configure_ok() {
+    command -v ufw >/dev/null 2>&1 || return 1
+    command -v iptables >/dev/null 2>&1 || return 1
+    sudo iptables -t filter -S >/dev/null 2>&1 || return 1
+    return 0
+}
+
+# Run a subprocess; discard combined output on success, append transcript on failure only.
+run_capture_on_fail() {
+    local label="$1"
+    shift
+    local tmp
+    tmp=$(mktemp)
+    if ! "$@" >"$tmp" 2>&1; then
+        {
+            printf '---- %s\n' "$label"
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+# Create directory
+ensure_directory() {
+    mkdir -p "$1" 2>>"$ERROR_LOG_FILE" || {
+        log_error "Failed to create directory: $1"
+    }
+}
+
+# Remove empty directory
+remove_empty_directory() {
+    rmdir "$1" 2>/dev/null || true
+}
+
+# Copy file (skip if destination already exists — first-time provisioning only).
+copy_file_safe() {
+    local source="$1"
+    local destination="$2"
+
+    if [[ ! -f "$source" ]] || [[ -f "$destination" ]]; then
+        return 0
+    fi
+
+    mkdir -p "$(dirname "$destination")"
+    cp "$source" "$destination" 2>>"$ERROR_LOG_FILE" || {
+        log_error "failed to copy $source to $destination"
+    }
+}
+
+# Copy directory tree when destination path does not already exist (idempotent provisioning).
+copy_directory_safe() {
+    local source="$1"
+    local destination="$2"
+
+    if [[ ! -d "$source" ]] || [[ -d "$destination" ]]; then
+        return 0
+    fi
+
+    local dest_dir
+    dest_dir=$(dirname "$destination")
+    mkdir -p "$dest_dir"
+    cp -r "$source" "$destination" 2>>"$ERROR_LOG_FILE" || {
+        log_error "failed to copy directory $source to $destination"
+    }
+}
+
+# Download file
+download_file_safe() {
+    local url="$1"
+    local destination="$2"
+
+    curl -sSL --connect-timeout 30 --max-time 300 --fail --show-error "$url" -o "$destination" 2>>"$ERROR_LOG_FILE" || {
+        log_error "Failed to download $url"
+        rm -f "$destination" 2>/dev/null || true
+        return 1
+    }
+
+    if [[ ! -f "$destination" ]] || [[ ! -s "$destination" ]]; then
+        log_error "Downloaded file is empty or missing: $destination"
+        rm -f "$destination" 2>/dev/null || true
+        return 1
+    fi
+}
+
+# Clone git repository
+clone_repository_safe() {
+    local repo_url="$1"
+    local destination="$2"
+    local depth="${3:-}"
+
+    if [[ -d "$destination" ]]; then
+        return 0
+    fi
+
+    local clone_args=()
+    if [[ -n "$depth" ]]; then
+        clone_args+=("--depth" "$depth")
+    fi
+
+    git clone "${clone_args[@]}" "$repo_url" "$destination" 2>>"$ERROR_LOG_FILE" || {
+        log_error "Failed to clone repository $repo_url"
+    }
+}
+
+# GNOME gsettings helpers — only when desktop schemas are installed (e.g. not on minimal/CI images).
+gsettings_ok() {
+    command -v gsettings >/dev/null 2>&1 || return 1
+    [[ -S "/run/user/$(id -u)/bus" ]] || return 1
+    gsettings list-schemas 2>/dev/null | grep -qx org.gnome.desktop.interface
+}
+
+gsettings_set() {
+    gsettings set "$@" 2>>"$ERROR_LOG_FILE" || true
+}
+
+gsettings_schema_exists() {
+    gsettings list-schemas 2>/dev/null | grep -qx "$1"
+}
+
+# Create temporary directory
+mkdir -p "$TEMP_DIR"
+
+# Export functions and variables for use in other scripts
+export -f log_error install_dnf_packages update_dnf_cache dnf_quiet_best_effort
+export -f systemd_running_pid1 ufw_configure_ok run_capture_on_fail
+export -f ensure_directory remove_empty_directory
+export -f copy_file_safe copy_directory_safe download_file_safe clone_repository_safe
+export -f gsettings_ok gsettings_set gsettings_schema_exists
+export PROJECT_ROOT SCRIPT_DIR SCRIPTS_DIR ERROR_LOG_FILE TEMP_DIR

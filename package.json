@@ -1,0 +1,15 @@
+{
+  "scripts": {
+    "all": "bash src/scripts/master.sh",
+    "installs": "bash src/scripts/run-install.sh",
+    "config": "bash src/scripts/run-config.sh",
+    "lint": "npm run lint:prettier && npm run lint:markdown && npm run lint:yaml",
+    "lint:prettier": "prettier --check .",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\" \"#node_modules\" \"#src/dotfiles\"",
+    "lint:yaml": "yamllint .github .yamllint .markdownlint.yaml"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "^0.22.1",
+    "prettier": "^3.6.2"
+  }
+}
