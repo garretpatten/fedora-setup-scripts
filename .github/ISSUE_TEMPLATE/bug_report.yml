@@ -1,0 +1,56 @@
+---
+name: Bug report
+description: Incorrect behavior during or after provisioning
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Share Fedora version plus the commands that reproduce the issue.
+        Add redacted `setup_errors.log` lines when helpful.
+        Read **CONTRIBUTING.md** before submitting.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Expected vs actual
+      description: What should happen versus what occurred?
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: |
+        Prefer orchestrators: `master.sh`, `run-install.sh`, or `run-config.sh`.
+
+
+        Or cite granular `install/*.sh` / `config/*.sh` under `src/scripts/`.
+      placeholder: |
+        sudo ./src/scripts/master.sh
+        …
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Fedora and environment
+      description: |
+        Paste `uname -a` plus `cat /etc/os-release`.
+        Mention COPR/RPM Fusion/SELinux when relevant.
+      placeholder: |
+        Fedora 42 workstation (GNOME); headless container; SELinux enforcing; …
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs (optional but helpful)
+      description: Repo-root **`setup_errors.log`** snippet or Actions URL.
+      render: plaintext
+    validations:
+      required: false

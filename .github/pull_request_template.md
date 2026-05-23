@@ -1,7 +1,11 @@
-### Changes
+# Pull request
+
+## Changes
+
 -
 
-### Checklist
-- [ ] Any related Issues are assigned to the PR author.
-- [ ] All related Issues are linked to the PR.
-- [ ] Changes have been reviewed and tested.
+## Checklist
+
+- [ ] [Code of Conduct](../CODE_OF_CONDUCT.md); non-security defects use Issues when clarifying repro first.
+- [ ] **Security-sensitive** changes follow coordinated disclosure ([SECURITY.md](../SECURITY.md)).
+- [ ] Tested behaviors on Fedora Workstation (or noted why CI-only/container paths cover the change).

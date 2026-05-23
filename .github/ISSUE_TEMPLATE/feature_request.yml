@@ -1,0 +1,52 @@
+---
+name: Feature request
+description: Suggest tooling, sequencing, docs, or safety improvements
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Summarize Fedora context (desktop vs server) and targeted bundle.
+
+
+        Separate **`install/`** package work from **`config/`** session tweaks.
+
+
+        Read **CONTRIBUTING.md** before submitting.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What changes and intended outcome?
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Problem / rationale
+      description: What gap exists today?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: bundle
+    attributes:
+      label: Primary surface
+      options:
+        - install/ (DNF, COPR/RPM repos, installers, clones)
+        - config/ (GNOME, dotfiles, UFW/firewalld interplay)
+        - docs / tooling / CI (Fedora container checks)
+        - submodule dotfiles consumed here
+      default: 0
+
+  - type: textarea
+    id: footprint
+    attributes:
+      label: Constraints (optional)
+      description: Offline installs or SELinux/COPR/friction notes.
+      render: plaintext
+    validations:
+      required: false

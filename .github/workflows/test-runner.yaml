@@ -1,0 +1,95 @@
+# yamllint disable-file rule:line-length
+---
+name: 'Test Runner'
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    name: 'Test Fedora Setup Scripts'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    container:
+      image: fedora:latest
+
+    steps:
+      - name: Install prerequisites for CI
+        run: |
+          set -eo pipefail
+          dnf -y upgrade --refresh
+          dnf -y install \
+            gcc make openssl shadow-utils systemd systemd-pam \
+            git curl wget ca-certificates sudo gnupg2 procps-ng \
+            findutils unzip which xz file pkgconf-pkg-config \
+            dnf-plugins-core python3 python3-pip python3-devel
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Make scripts executable
+        run: |
+          chmod +x src/scripts/*.sh \
+            src/scripts/install/*.sh \
+            src/scripts/config/*.sh
+
+      # CI lacks a GNOME session; config/system-config.sh skips gsettings.
+      - name: Run setup scripts (best-effort)
+        run: |
+          cd src/scripts
+          bash master.sh || true
+
+      - name: Check error log
+        working-directory: ${{ github.workspace }}
+        run: |
+          ERROR_LOG="setup_errors.log"
+          if [[ -f "$ERROR_LOG" ]] && [[ -s "$ERROR_LOG" ]]; then
+            FILTERED_LOG=$(mktemp)
+            re=''
+            re+='Running kernel seems to be up-to-date|Restarting services|'
+            re+='Service restarts being deferred|'
+            re+='No containers need to be restarted|No VM guests are running|'
+            re+='User sessions running outdated binaries|'
+            re+='No user sessions are running outdated binaries|'
+            re+='runner @ user manager service|needrestart|'
+            re+='No services need to be restarted|'
+            re+='chsh: PAM: Authentication failure|Password:|systemctl restart|'
+            re+='WARNING: apt does not have a stable CLI|'
+            re+='Synchronizing state of docker|RPM: warning|'
+            re+='iptables:|firewalld|'
+            re+='IPv6 forwarding|sysctl:|Failed to preset|'
+            re+='dbus-daemon:|'
+            re+='Module .* is disabled|nft:|Could not activate|'
+            re+='dnf:|Dependencies resolved|Downloading:|'
+            re+='Installing[[:space:]]*:|Installing :|Installing:|'
+            re+='Transaction check|'
+            re+='Upgrade[[:space:]]+[[:digit:]]+|Transaction succeeded|'
+            re+='Cleanup[[:space:]]*:'
+            re+='Importing[[:space:]]+PGP|Migrations|RPM-GPG|'
+            re+='PAM helper|pam_systemd|'
+            re+='Executing: /usr/lib/systemd|^Cloning into|'
+            re+='^Updating files:|^Resolving |^Connecting to |'
+            re+='^HTTP request sent|'
+            re+='^Length:|^Saving to:|'
+            re+='^--[0-9]{4}-[0-9]{2}-[0-9]{2}|'
+            re+='^[0-9]{4}-[0-9]{2}-[0-9]{2}.*saved|'
+            re+='^[[:space:]]*[0-9]+K|done\.$|^[[:space:]]*100%|^npm notice|'
+            re+='% Total|% Received|% Xferd|Average Speed|'
+            re+='Dload  Upload|'
+            re+='Time    Time     Time  Current|--:--:--'
+            grep -v -E "$re" "$ERROR_LOG" \
+              | grep -v '^[[:space:]]*$' >"$FILTERED_LOG" || true
+
+            if [[ -s "$FILTERED_LOG" ]]; then
+              echo "❌ Errors found:"
+              cat "$FILTERED_LOG"
+              rm -f "$FILTERED_LOG"
+              exit 1
+            fi
+            rm -f "$FILTERED_LOG"
+          fi
