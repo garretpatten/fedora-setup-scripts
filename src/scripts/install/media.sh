@@ -19,11 +19,16 @@ install_dnf_packages "brave-browser"
 
 install_dnf_packages "vlc"
 
-multimedia_packages=(
-    "ffmpeg"
-    "ffmpeg-libs"
-)
-install_dnf_packages "${multimedia_packages[@]}" 2>>"$ERROR_LOG_FILE" || install_dnf_packages "ffmpeg"
+# Fedora exposes patent-safe FFmpeg as ffmpeg-free; libs are bundled (no ffmpeg-libs metapackage).
+if ! rpm -q ffmpeg-free >/dev/null 2>&1 && ! rpm -q ffmpeg >/dev/null 2>&1; then
+    ffmpeg_tmp=$(mktemp)
+    if ! { sudo dnf install -y ffmpeg-free; } >"$ffmpeg_tmp" 2>&1 \
+        && ! { sudo dnf install -y ffmpeg; } >"$ffmpeg_tmp" 2>&1; then
+        cat "$ffmpeg_tmp" >>"$ERROR_LOG_FILE"
+        log_error "Could not install ffmpeg-free or ffmpeg (enable RPM Fusion for full codecs if needed)."
+    fi
+    rm -f "$ffmpeg_tmp"
+fi
 
 if flatpak remote-info flathub >/dev/null 2>&1; then
     flatpak install -y flathub com.spotify.Client 2>>"$ERROR_LOG_FILE" || true

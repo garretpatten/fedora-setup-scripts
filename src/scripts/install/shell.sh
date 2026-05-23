@@ -11,15 +11,13 @@ shell_packages=(
 )
 install_dnf_packages "${shell_packages[@]}"
 
-ghostty_via_copr=0
-if sudo dnf -y copr enable hkdb/ghostty 2>>"$ERROR_LOG_FILE"; then
-    update_dnf_cache
-fi
-if sudo dnf install -y ghostty 2>>"$ERROR_LOG_FILE"; then
-    ghostty_via_copr=1
-fi
-if [[ "$ghostty_via_copr" -eq 0 ]]; then
-    echo "[fedora-setup] Ghostty Fedora install skipped (enable hkdb/ghostty COPR manually if needed)." 2>/dev/null || true
+# Ghostty ships in Fedora 43+; older releases or COPR builds require manual repo setup (see README).
+if ! rpm -q ghostty >/dev/null 2>&1; then
+    gh_tmp=$(mktemp)
+    if ! { sudo dnf install -y ghostty; } >"$gh_tmp" 2>&1; then
+        echo "[fedora-setup] Ghostty not available from enabled repos; install via https://ghostty.org/docs/install or add a COPR manually." || true
+    fi
+    rm -f "$gh_tmp"
 fi
 
 font_packages=(

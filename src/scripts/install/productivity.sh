@@ -13,7 +13,7 @@ office_packages=(
     "libreoffice-draw"
     "libreoffice-langpack-en"
 )
-install_dnf_packages "${office_packages[@]}" 2>>"$ERROR_LOG_FILE" || install_dnf_packages "libreoffice"
+install_dnf_packages "${office_packages[@]}" || install_dnf_packages "libreoffice"
 
 if flatpak remote-info flathub >/dev/null 2>&1; then
     flatpak install -y flathub us.zoom.Zoom 2>>"$ERROR_LOG_FILE" || true

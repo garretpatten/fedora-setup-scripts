@@ -5,8 +5,8 @@ source "$(dirname "$0")/../utils.sh"
 
 update_dnf_cache
 
-sudo dnf upgrade -y 2>>"$ERROR_LOG_FILE" || true
-sudo dnf autoremove -y 2>>"$ERROR_LOG_FILE" || true
+dnf_quiet_best_effort upgrade -y || true
+dnf_quiet_best_effort autoremove -y || true
 
 essential_tools=(
     "git"

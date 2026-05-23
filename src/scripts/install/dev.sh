@@ -29,9 +29,12 @@ if command -v npm >/dev/null 2>&1; then
     sudo npm install -g @vue/cli --loglevel=error --no-update-notifier 2>>"$ERROR_LOG_FILE" || true
 fi
 
+# DNF 5 dropped `config-manager --add-repo`; install the upstream .repo like other third‑party RPM sources.
 if [[ ! -f /etc/yum.repos.d/docker-ce.repo ]]; then
-    sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo 2>>"$ERROR_LOG_FILE" || true
-    update_dnf_cache
+    if download_file_safe "https://download.docker.com/linux/fedora/docker-ce.repo" "$TEMP_DIR/docker-ce.repo"; then
+        sudo install -Dm644 "$TEMP_DIR/docker-ce.repo" /etc/yum.repos.d/docker-ce.repo 2>>"$ERROR_LOG_FILE" || true
+        update_dnf_cache || true
+    fi
 fi
 
 docker_packages=(
@@ -40,7 +43,7 @@ docker_packages=(
     "containerd.io"
     "docker-compose-plugin"
 )
-install_dnf_packages "${docker_packages[@]}" 2>>"$ERROR_LOG_FILE" || true
+install_dnf_packages "${docker_packages[@]}" || true
 
 neovim_packages=(
     "neovim"

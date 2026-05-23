@@ -39,13 +39,17 @@ for proton_url in "${protonvpn_repo_urls[@]}"; do
 done
 
 if [[ "$protonvpn_repo_installed" -eq 1 ]]; then
-    protonvpn_packages=(
-        "proton-vpn-gnome-desktop"
-        "libappindicator-gtk3"
-        "gnome-extensions-app"
-        "gnome-shell-extension-appindicator"
-    )
-    install_dnf_packages "${protonvpn_packages[@]}"
+    if systemd_running_pid1; then
+        protonvpn_packages=(
+            "proton-vpn-gnome-desktop"
+            "libappindicator-gtk3"
+            "gnome-extensions-app"
+            "gnome-shell-extension-appindicator"
+        )
+        install_dnf_packages "${protonvpn_packages[@]}"
+    else
+        echo "[fedora-setup] Skipping Proton VPN desktop stack (needs systemd PID 1; RPM post-install scripts)." || true
+    fi
 fi
 
 # Proton Pass desktop RPM — canonical URLs live in version.json (see Proton support).

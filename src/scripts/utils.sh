@@ -19,19 +19,72 @@ log_error() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] ERROR: $*" >>"$ERROR_LOG_FILE"
 }
 
-# Install packages — multi-run safe (DNF/RPM stack)
+# DNF emits progress bars to stderr; only append transcripts to setup_errors.log on failure.
 install_dnf_packages() {
     local packages=("$@")
-    sudo dnf install -y "${packages[@]}" 2>>"$ERROR_LOG_FILE" || {
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf install -y "${packages[@]}"; } >"$tmp" 2>&1; then
+        {
+            echo "----"
+            printf 'dnf install -y'
+            printf ' %q' "${packages[@]}"
+            printf '\n'
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
         log_error "Failed to install packages: ${packages[*]}"
-    }
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
 }
 
 # Refresh repository metadata / cache (best-effort; does not insist on freshest metadata elsewhere)
 update_dnf_cache() {
-    sudo dnf makecache -y 2>>"$ERROR_LOG_FILE" || {
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf makecache -y; } >"$tmp" 2>&1; then
+        {
+            echo "---- dnf makecache -y"
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
         log_error "Failed to refresh dnf cache"
-    }
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+# Noisy upgrades/autoremoves: keep CI error logs clean unless the transaction fails.
+dnf_quiet_best_effort() {
+    local tmp
+    tmp=$(mktemp)
+    if ! { sudo dnf "$@"; } >"$tmp" 2>&1; then
+        {
+            printf '---- sudo dnf'
+            printf ' %q' "$@"
+            printf '\n'
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
+systemd_running_pid1() {
+    local comm
+    comm="$(ps --no-headers -o comm 1 2>/dev/null | head -n1 | tr -d '[:space:]')"
+    [[ "${comm%/}" == "systemd" ]]
+}
+
+# UFW needs a working iptables filter table (fails inside many containers / hardened CI kernels).
+ufw_configure_ok() {
+    command -v ufw >/dev/null 2>&1 || return 1
+    command -v iptables >/dev/null 2>&1 || return 1
+    sudo iptables -t filter -S >/dev/null 2>&1 || return 1
+    return 0
 }
 
 # Create directory
@@ -135,7 +188,9 @@ gsettings_schema_exists() {
 mkdir -p "$TEMP_DIR"
 
 # Export functions and variables for use in other scripts
-export -f log_error install_dnf_packages update_dnf_cache ensure_directory remove_empty_directory
+export -f log_error install_dnf_packages update_dnf_cache dnf_quiet_best_effort
+export -f systemd_running_pid1 ufw_configure_ok
+export -f ensure_directory remove_empty_directory
 export -f copy_file_safe copy_directory_safe download_file_safe clone_repository_safe
 export -f gsettings_ok gsettings_set gsettings_schema_exists
 export PROJECT_ROOT SCRIPT_DIR SCRIPTS_DIR ERROR_LOG_FILE TEMP_DIR

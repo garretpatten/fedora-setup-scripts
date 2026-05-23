@@ -52,7 +52,7 @@
 Fedora Setup Scripts automate a **baseline engineering stack**: security tooling,
 shells and terminals, development runtimes (Node, Docker, Neovim, and peers), GNOME ergonomics when a
 desktop session exists, and a pinned **dotfiles** submodule for editor and tmux parity across
-machines. The layout and philosophy mirror [ubuntu-setup-scripts](https://github.com/garretpatten/ubuntu-setup-scripts), with **DNF/RPM** repositories, **Flatpak**, and Fedora-specific paths (e.g. `dnf-automatic`, Brave’s RPM repo, Proton VPN stable RPM, optional **COPR Ghostty**).
+machines. The layout and philosophy mirror [ubuntu-setup-scripts](https://github.com/garretpatten/ubuntu-setup-scripts), with **DNF/RPM** repositories, **Flatpak**, and Fedora-specific paths (e.g. `dnf-automatic`, Brave’s RPM repo, Proton VPN stable RPM, **Ghostty** when Fedora ships it in enabled repos).
 
 ## ✨ Features
 
@@ -164,7 +164,7 @@ fedora-setup-scripts/
 │   │   │   ├── productivity.sh
 │   │   │   ├── dev.sh
 │   │   │   ├── security.sh
-│   │   │   ├── shell.sh       # Zsh/tmux, COPR Ghostty, fonts, Oh My Posh
+│   │   │   ├── shell.sh       # Zsh/tmux, Ghostty (Fedora repos), fonts, Oh My Posh
 │   │   │   └── post-install.sh
 │   │   └── config/
 │   │       ├── system-config.sh
@@ -189,7 +189,7 @@ fedora-setup-scripts/
 7. **`config/dev.sh`** — selective copies from **`src/dotfiles/config/`**; Git globals; VS Code `settings.json`
 8. **`install/security.sh`** — **UFW**/OpenVPN RPMs, Proton VPN stable repo bootstrap, Proton Pass (**RPM** resolver), Signal & ZAP (**Flatpak**), clones under **`~/Hacking`**
 9. **`config/security.sh`** — stop/disable **firewalld** when present, then **UFW** defaults
-10. **`install/shell.sh`** — Zsh stack, **COPR `hkdb/ghostty`**, Meslo Nerd Font drop, Oh My Posh
+10. **`install/shell.sh`** — Zsh stack, **`ghostty`** when packaged upstream, Meslo Nerd Font drop, Oh My Posh
 11. **`install/post-install.sh`** — DNF maintenance, **docker** group, best-effort **UFW** enable, banner (**`src/assets/fedora.txt`**)
 12. **`config/shell.sh`** — **`home/`** dotfiles, **`~/.dotfiles_path`** for **`home/zsh/fedora.zsh`**, **`chsh`** when possible
 
@@ -219,7 +219,7 @@ The lists below mirror the **`install/`** and **`config/`** split; open each scr
 
 #### 🎬 **Media** (`install/media.sh`)
 
-Brave (**official RPM repo**), VLC, **ffmpeg** stack, Spotify (**Flatpak**)
+Brave (**official RPM repo**), VLC, **ffmpeg-free**/**ffmpeg**, Spotify (**Flatpak** — **RPM Fusion** helps for fuller FFmpeg codecs)
 
 #### 📊 **Productivity** (`install/productivity.sh`)
 
@@ -229,15 +229,15 @@ Flameshot, Balena Etcher AppImage
 #### 🔒 **Security packages & payloads** (`install/security.sh`)
 
 - **`ufw`**, **`openvpn`**
-- **Proton VPN** stable release RPM + **`proton-vpn-gnome-desktop`**
+- **Proton VPN** stable release RPM + **`proton-vpn-gnome-desktop`** (skipped without **systemd** as PID 1 —
+  containers/CI-friendly)
 - **Proton Pass** desktop RPM (version.json resolver with fallbacks) + CLI tarball
 - Signal (**Flatpak**), **`nmap`**, **`perl-Image-ExifTool`**, OWASP ZAP (**Flatpak**)
 - Optional clones **`PayloadsAllTheThings`** / **`SecLists`** under **`~/Hacking`**
 
 #### 🐚 **Shell tooling** (`install/shell.sh`)
 
-Zsh + plugins, **`tmux`**, **`hkdb/ghostty`** COPR install, Google Noto Emoji + Fira Code fonts, Meslo
-Nerd Font drop, user Oh My Posh + shared themes when **`/usr/share/oh-my-posh/themes`** is empty
+Zsh + plugins, **`tmux`**, **`ghostty`** from enabled repos (**[Ghostty install docs](https://ghostty.org/docs/install)** for unsupported releases), Google Noto Emoji + Fira Code fonts, Meslo Nerd Font drop, user Oh My Posh + shared themes when **`/usr/share/oh-my-posh/themes`** is empty
 
 #### 🏁 **Post maintenance** (`install/post-install.sh`)
 
@@ -263,7 +263,7 @@ Selective copies from **`src/dotfiles/config/`** into **`~/.config/`**, VS Code 
 
 #### 🔒 **UFW posture** (`config/security.sh`)
 
-Stops/disables **firewalld** when the unit exists, then **`ufw`** reset/deny-in/allow-out/SSH/enable.
+Stops/disables **firewalld** when the unit exists, then **`ufw`** reset/deny-in/allow-out/SSH/enable when **iptables filter** works (minimal containers skip quietly).
 
 #### 🐚 **Shell dotfiles** (`config/shell.sh`)
 
@@ -295,10 +295,14 @@ chmod +x src/scripts/*.sh src/scripts/install/*.sh src/scripts/config/*.sh
 
 ### DNF failures
 
+`setup_errors.log` only records **failed** **`dnf`** transactions — normal progress no longer floods the file.
+
 ```bash
 sudo dnf upgrade --refresh
 # then re-run the stage that failed
 ```
+
+If **Docker CE** metadata vanishes after a distro bump, reinstall **`/etc/yum.repos.d/docker-ce.repo`** from Docker’s Fedora instructions and **`sudo dnf makecache`** again.
 
 ### Docker still needs sudo
 

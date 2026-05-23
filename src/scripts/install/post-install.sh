@@ -5,8 +5,8 @@ source "$(dirname "$0")/../utils.sh"
 
 update_dnf_cache
 
-sudo dnf upgrade -y 2>>"$ERROR_LOG_FILE" || true
-sudo dnf autoremove -y 2>>"$ERROR_LOG_FILE" || true
+dnf_quiet_best_effort upgrade -y || true
+dnf_quiet_best_effort autoremove -y || true
 
 if command -v docker >/dev/null 2>&1; then
     sudo systemctl enable docker.service 2>>"$ERROR_LOG_FILE" || true
@@ -14,7 +14,7 @@ if command -v docker >/dev/null 2>&1; then
     sudo usermod -aG docker "$USER" 2>>"$ERROR_LOG_FILE" || true
 fi
 
-if command -v ufw >/dev/null 2>&1; then
+if command -v ufw >/dev/null 2>&1 && ufw_configure_ok; then
     sudo ufw --force enable 2>>"$ERROR_LOG_FILE" || true
 fi
 

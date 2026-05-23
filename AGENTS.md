@@ -37,7 +37,7 @@ Scripts in **`install/`** and **`config/`**:
 
 4. Preserve the soft-failure style: `|| true`, `2>>"$ERROR_LOG_FILE"`, **`log_error`** emitted from orchestrators for stage exits.
 
-5. **Headless-safe**: **`config/security.sh`** no-ops if **`ufw`** missing; **`gsettings`** only when **`gsettings_ok`**.
+5. **Headless-safe**: **`config/security.sh`** no-ops when **`ufw`** is unavailable **or iptables tables cannot load** (typical CI containers); **`gsettings`** only when **`gsettings_ok`**.
 
 Paths:
 

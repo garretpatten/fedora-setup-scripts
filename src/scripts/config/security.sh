@@ -10,6 +10,10 @@ if ! command -v ufw >/dev/null 2>&1; then
     exit 0
 fi
 
+if ! ufw_configure_ok; then
+    exit 0
+fi
+
 if systemctl list-unit-files | grep -q '^firewalld\.service'; then
     sudo systemctl stop firewalld 2>>"$ERROR_LOG_FILE" || true
     sudo systemctl disable firewalld 2>>"$ERROR_LOG_FILE" || true
