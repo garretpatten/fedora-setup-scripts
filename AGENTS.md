@@ -33,9 +33,11 @@ Scripts in **`install/`** and **`config/`**:
 1. `#!/bin/bash`, `# shellcheck source=../utils.sh`, `source "$(dirname "$0")/../utils.sh"`.
 2. Top-level **`master.sh`** / **`run-*.sh`**: `# shellcheck source=utils.sh` + `source "$(dirname "$0")/utils.sh"`.
 
-3. Prefer helpers from **`utils.sh`** (**`install_dnf_packages`**, **`copy_directory_safe`**, **`download_file_safe`**, **`gsettings_ok`**, …).
+3. Prefer helpers from **`utils.sh`** (**`install_dnf_packages`**, **`run_capture_on_fail`**,
+   **`copy_directory_safe`**, **`download_file_safe`**, **`gsettings_ok`**, …).
 
-4. Preserve the soft-failure style: `|| true`, `2>>"$ERROR_LOG_FILE"`, **`log_error`** emitted from orchestrators for stage exits.
+4. Preserve the soft-failure style: **`log_error`** for actionable failures, **`|| true`** where installs are optional.
+   Do not stream **successful** noise into **`setup_errors.log`** (**`master.sh`** tees child **stderr** there); use **`run_capture_on_fail`**, quiet **`dnf`/flatpak wrappers**, **`>/dev/null`** for systemd/UFW in CI, instead of blindly **`2>>"$ERROR_LOG_FILE"`**.
 
 5. **Headless-safe**: **`config/security.sh`** no-ops when **`ufw`** is unavailable **or iptables tables cannot load** (typical CI containers); **`gsettings`** only when **`gsettings_ok`**.
 

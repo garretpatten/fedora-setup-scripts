@@ -87,6 +87,24 @@ ufw_configure_ok() {
     return 0
 }
 
+# Run a subprocess; discard combined output on success, append transcript on failure only.
+run_capture_on_fail() {
+    local label="$1"
+    shift
+    local tmp
+    tmp=$(mktemp)
+    if ! "$@" >"$tmp" 2>&1; then
+        {
+            printf '---- %s\n' "$label"
+            cat "$tmp"
+        } >>"$ERROR_LOG_FILE"
+        rm -f "$tmp"
+        return 1
+    fi
+    rm -f "$tmp"
+    return 0
+}
+
 # Create directory
 ensure_directory() {
     mkdir -p "$1" 2>>"$ERROR_LOG_FILE" || {
@@ -189,7 +207,7 @@ mkdir -p "$TEMP_DIR"
 
 # Export functions and variables for use in other scripts
 export -f log_error install_dnf_packages update_dnf_cache dnf_quiet_best_effort
-export -f systemd_running_pid1 ufw_configure_ok
+export -f systemd_running_pid1 ufw_configure_ok run_capture_on_fail
 export -f ensure_directory remove_empty_directory
 export -f copy_file_safe copy_directory_safe download_file_safe clone_repository_safe
 export -f gsettings_ok gsettings_set gsettings_schema_exists

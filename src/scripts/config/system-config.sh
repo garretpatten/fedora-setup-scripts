@@ -60,21 +60,21 @@ if gsettings_ok; then
 fi
 
 install_dnf_packages "dnf-automatic"
-sudo env ERROR_LOG_FILE="$ERROR_LOG_FILE" bash -c '
-systemctl enable dnf-automatic.timer 2>>"$ERROR_LOG_FILE" || true
-systemctl start dnf-automatic.timer 2>>"$ERROR_LOG_FILE" || true
+sudo bash -c '
+systemctl enable dnf-automatic.timer >/dev/null 2>&1 || true
+systemctl start dnf-automatic.timer >/dev/null 2>&1 || true
 
 gdm_conf="/etc/gdm/custom.conf"
 if [[ -f "$gdm_conf" ]] && ! grep -qE "^AllowGuest=false" "$gdm_conf" 2>/dev/null && grep -q "^\[daemon\]" "$gdm_conf" 2>/dev/null; then
-    sed -i "/^\[daemon\]/a AllowGuest=false" "$gdm_conf" 2>>"$ERROR_LOG_FILE" || true
+    sed -i "/^\[daemon\]/a AllowGuest=false" "$gdm_conf" 2>/dev/null || true
 fi
 
 logind_dropin="/etc/systemd/logind.conf.d/50-lid.conf"
-mkdir -p "$(dirname "$logind_dropin")" 2>>"$ERROR_LOG_FILE" || true
+mkdir -p "$(dirname "$logind_dropin")" 2>/dev/null || true
 if [[ ! -f "$logind_dropin" ]]; then
     printf "%s\n" "[Login]" "HandleLidSwitch=suspend" "HandleLidSwitchExternalPower=suspend" "HandleLidSwitchDocked=ignore" >"$logind_dropin"
 fi
-systemctl try-restart systemd-logind.service 2>>"$ERROR_LOG_FILE" || true
+systemctl try-restart systemd-logind.service >/dev/null 2>&1 || true
 
 sysctl_conf="/etc/sysctl.d/99-tcp-keepalive.conf"
 if [[ ! -f "$sysctl_conf" ]]; then
@@ -84,5 +84,5 @@ if [[ ! -f "$sysctl_conf" ]]; then
         "net.ipv4.tcp_keepalive_probes = 5" \
         >"$sysctl_conf"
 fi
-sysctl --system 2>>"$ERROR_LOG_FILE" || true
+sysctl --system >/dev/null 2>&1 || true
 ' || true

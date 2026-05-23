@@ -15,12 +15,12 @@ if ! ufw_configure_ok; then
 fi
 
 if systemctl list-unit-files | grep -q '^firewalld\.service'; then
-    sudo systemctl stop firewalld 2>>"$ERROR_LOG_FILE" || true
-    sudo systemctl disable firewalld 2>>"$ERROR_LOG_FILE" || true
+    sudo systemctl stop firewalld >/dev/null 2>&1 || true
+    sudo systemctl disable firewalld >/dev/null 2>&1 || true
 fi
 
-sudo ufw --force reset 2>>"$ERROR_LOG_FILE" || true
-sudo ufw default deny incoming 2>>"$ERROR_LOG_FILE" || true
-sudo ufw default allow outgoing 2>>"$ERROR_LOG_FILE" || true
-sudo ufw allow ssh 2>>"$ERROR_LOG_FILE" || true
-sudo ufw --force enable 2>>"$ERROR_LOG_FILE" || true
+sudo ufw --force reset >/dev/null 2>&1 || true
+sudo ufw default deny incoming >/dev/null 2>&1 || true
+sudo ufw default allow outgoing >/dev/null 2>&1 || true
+sudo ufw allow ssh >/dev/null 2>&1 || true
+sudo ufw --force enable >/dev/null 2>&1 || true

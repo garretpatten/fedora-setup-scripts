@@ -9,13 +9,18 @@ dnf_quiet_best_effort upgrade -y || true
 dnf_quiet_best_effort autoremove -y || true
 
 if command -v docker >/dev/null 2>&1; then
-    sudo systemctl enable docker.service 2>>"$ERROR_LOG_FILE" || true
-    sudo systemctl start docker.service 2>>"$ERROR_LOG_FILE" || true
-    sudo usermod -aG docker "$USER" 2>>"$ERROR_LOG_FILE" || true
+    sudo systemctl enable docker.service >/dev/null 2>&1 || true
+    sudo systemctl start docker.service >/dev/null 2>&1 || true
+    docker_grant_user="${SUDO_USER:-${USER:-}}"
+    [[ -n "$docker_grant_user" ]] || docker_grant_user="$(logname 2>/dev/null || true)"
+    [[ -n "$docker_grant_user" ]] || docker_grant_user="$(id -un 2>/dev/null || true)"
+    if [[ -n "$docker_grant_user" ]] && [[ "$docker_grant_user" != root ]] && id "$docker_grant_user" &>/dev/null; then
+        sudo usermod -aG docker "$docker_grant_user" >/dev/null 2>&1 || true
+    fi
 fi
 
 if command -v ufw >/dev/null 2>&1 && ufw_configure_ok; then
-    sudo ufw --force enable 2>>"$ERROR_LOG_FILE" || true
+    sudo ufw --force enable >/dev/null 2>&1 || true
 fi
 
 fedora_art_file="$PROJECT_ROOT/src/assets/fedora.txt"

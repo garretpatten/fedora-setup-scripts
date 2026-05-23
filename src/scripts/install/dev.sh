@@ -9,7 +9,9 @@ update_dnf_cache
 NODE_MAJOR=24
 nodesource_setup="$TEMP_DIR/nodesource_setup.sh"
 download_file_safe "https://rpm.nodesource.com/setup_${NODE_MAJOR}.x" "$nodesource_setup"
-sudo bash "$nodesource_setup" 2>>"$ERROR_LOG_FILE" || log_error "NodeSource Fedora setup returned non-zero (continuing if nodejs installed)"
+if ! run_capture_on_fail "NodeSource Fedora setup (${NODE_MAJOR}.x)" sudo bash "$nodesource_setup"; then
+    log_error "NodeSource Fedora setup returned non-zero (continuing if nodejs installed)"
+fi
 install_dnf_packages "nodejs"
 
 if [[ ! -d "$HOME/.nvm" ]]; then
@@ -62,7 +64,7 @@ if flatpak remote-info flathub >/dev/null 2>&1; then
     flatpak install -y flathub com.getpostman.Postman 2>>"$ERROR_LOG_FILE" || true
 fi
 
-pip3 install --user semgrep 2>>"$ERROR_LOG_FILE" || true
+run_capture_on_fail "pip install semgrep (user)" env PIP_ROOT_USER_ACTION=ignore pip3 install --user semgrep || true
 
 sg_binary="$TEMP_DIR/sg"
 download_file_safe "https://sourcegraph.com/.api/src-cli/src_linux_amd64" "$sg_binary"

@@ -30,8 +30,16 @@ protonvpn_repo_installed=0
 for proton_url in "${protonvpn_repo_urls[@]}"; do
     [[ -z "$proton_url" ]] && continue
     rm -f "$protonvpn_release_rpm" 2>/dev/null || true
-    if curl -fsSL --connect-timeout 30 --max-time 120 "$proton_url" -o "$protonvpn_release_rpm" 2>>"$ERROR_LOG_FILE" && [[ -s "$protonvpn_release_rpm" ]]; then
-        sudo rpm -Uvh "$protonvpn_release_rpm" 2>>"$ERROR_LOG_FILE" || sudo rpm -ivh "$protonvpn_release_rpm" 2>>"$ERROR_LOG_FILE" || true
+    if curl -fsSL --connect-timeout 30 --max-time 120 "$proton_url" -o "$protonvpn_release_rpm" && [[ -s "$protonvpn_release_rpm" ]]; then
+        pp_r_tmp=$(mktemp)
+        if { sudo rpm -Uvh "$protonvpn_release_rpm"; } >>"$pp_r_tmp" 2>&1 \
+            || { sudo rpm -ivh "$protonvpn_release_rpm"; } >>"$pp_r_tmp" 2>&1; then
+            :
+        else
+            echo "--- protonvpn-stable-release RPM" >>"$ERROR_LOG_FILE"
+            cat "$pp_r_tmp" >>"$ERROR_LOG_FILE"
+        fi
+        rm -f "$pp_r_tmp"
         protonvpn_repo_installed=1
         update_dnf_cache
         break
@@ -78,7 +86,7 @@ proton_pass_resolve_latest_stable_rpm_url() {
         rm -f "$json_path" 2>/dev/null || true
         if ! curl -fsSL --connect-timeout 30 --max-time 120 --retry 3 --retry-delay 2 \
             -A "Mozilla/5.0 (X11; Linux x86_64)" \
-            "$base_url" -o "$json_path" 2>>"$ERROR_LOG_FILE"; then
+            "$base_url" -o "$json_path"; then
             continue
         fi
         [[ -s "$json_path" ]] || continue
@@ -100,7 +108,7 @@ for rel in data.get("Releases", []):
             print(url)
             sys.exit(0)
 sys.exit(1)
-' "$json_path" 2>>"$ERROR_LOG_FILE") || rpm_url=""
+' "$json_path" 2>/dev/null) || rpm_url=""
             [[ -n "$rpm_url" ]] && printf '%s' "$rpm_url" && return 0
         fi
     done
@@ -122,20 +130,23 @@ for proton_pass_url in "${proton_pass_urls[@]}"; do
     rm -f "$proton_pass_rpm" 2>/dev/null || true
     if curl -fsSL --connect-timeout 30 --max-time 600 --retry 3 --retry-delay 2 --retry-all-errors \
         -A "Mozilla/5.0 (X11; Linux x86_64)" \
-        "$proton_pass_url" -o "$proton_pass_rpm" 2>>"$ERROR_LOG_FILE" && proton_pass_is_valid_rpm "$proton_pass_rpm"; then
+        "$proton_pass_url" -o "$proton_pass_rpm" && proton_pass_is_valid_rpm "$proton_pass_rpm"; then
         proton_pass_downloaded=1
         break
     fi
 done
 
 if [[ "$proton_pass_downloaded" -eq 1 ]]; then
-    sudo dnf install -y "$proton_pass_rpm" 2>>"$ERROR_LOG_FILE" || sudo rpm -ivh "$proton_pass_rpm" 2>>"$ERROR_LOG_FILE" || true
+    if ! run_capture_on_fail "dnf install proton-pass RPM" sudo dnf install -y "$proton_pass_rpm"; then
+        run_capture_on_fail "rpm install proton-pass RPM" sudo rpm -ivh --nogpgcheck "$proton_pass_rpm" || true
+    fi
 else
     echo "[fedora-setup] Proton Pass RPM download unresolved; install manually if needed." 2>/dev/null || true
 fi
 
 proton_pass_cli="$TEMP_DIR/proton-pass-cli"
-proton_pass_cli_url=$(curl -s https://api.github.com/repos/protonpass/cli/releases/latest 2>>"$ERROR_LOG_FILE" | grep "browser_download_url.*linux-amd64" | cut -d '"' -f 4)
+proton_pass_cli_url=$(curl -fsSL https://api.github.com/repos/protonpass/cli/releases/latest \
+    | grep "browser_download_url.*linux-amd64" | cut -d '"' -f 4 || true)
 if [[ -n "$proton_pass_cli_url" ]]; then
     download_file_safe "$proton_pass_cli_url" "$proton_pass_cli"
     if [[ -f "$proton_pass_cli" ]] && [[ -s "$proton_pass_cli" ]]; then
@@ -145,7 +156,7 @@ if [[ -n "$proton_pass_cli_url" ]]; then
 fi
 
 if flatpak remote-info flathub >/dev/null 2>&1; then
-    flatpak install -y flathub org.signal.Signal 2>>"$ERROR_LOG_FILE" || true
+    flatpak install -y flathub org.signal.Signal >/dev/null 2>&1 || true
 fi
 
 dnf_security_tools=(
@@ -155,7 +166,7 @@ dnf_security_tools=(
 install_dnf_packages "${dnf_security_tools[@]}"
 
 if flatpak remote-info flathub >/dev/null 2>&1; then
-    flatpak install -y flathub org.zaproxy.ZAP 2>>"$ERROR_LOG_FILE" || true
+    flatpak install -y flathub org.zaproxy.ZAP >/dev/null 2>&1 || true
 fi
 
 ensure_directory "$HOME/Hacking"
