@@ -113,11 +113,12 @@ npm run all
 
 ### npm scripts
 
-| Command            | Runs                                                                                                   |
-| ------------------ | ------------------------------------------------------------------------------------------------------ |
-| `npm run all`      | Full provisioning (`master.sh`): installs interleaved with configuration (see execution flow below).   |
-| `npm run installs` | Install bundle only (`run-install.sh`): DNF/RPM, Flatpak, third-party installers — no GNOME/dotfiles.  |
-| `npm run config`   | Configuration bundle only (`run-config.sh`): defaults, home layout, firewall, submodule copies, shell. |
+| Command            | Runs                                                                                                         |
+| ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `npm run all`      | Full provisioning (`master.sh`): installs interleaved with configuration (see execution flow below).         |
+| `npm run installs` | Install bundle only (`run-install.sh`): DNF/RPM, Flatpak, third-party installers — no GNOME/dotfiles.        |
+| `npm run config`   | Configuration bundle only (`run-config.sh`): defaults, home layout, firewall, submodule copies, shell.       |
+| `npm run lint`     | **Prettier**, **markdownlint-cli2**, **yamllint** (local checks; see **[CONTRIBUTING](./CONTRIBUTING.md)**). |
 
 Bash equivalents:
 
@@ -286,26 +287,26 @@ Ghostty, oh-my-posh, modular tmux tree, **`home/`** files, **`~/.dotfiles_path`*
 
 ## 🔍 Troubleshooting
 
-**Permission errors**
+### Permission errors
 
 ```bash
 chmod +x src/scripts/*.sh src/scripts/install/*.sh src/scripts/config/*.sh
 ```
 
-**DNF failures**
+### DNF failures
 
 ```bash
 sudo dnf upgrade --refresh
 # then re-run the stage that failed
 ```
 
-**Docker still needs sudo**
+### Docker still needs sudo
 
 ```bash
 newgrp docker
 ```
 
-**Default shell**
+### Default shell
 
 ```bash
 chsh -s "$(command -v zsh)"

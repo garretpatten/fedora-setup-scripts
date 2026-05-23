@@ -81,29 +81,41 @@ Only commit when the user asks explicitly. Mention manual QA on Fedora Workstati
 
 ## Verify before you finish
 
-Run the closest match to Ubuntu’s verifier after substantive edits:
+Before you end a turn where you changed **any** file in this repository (Markdown,
+YAML under **`.github/`**, shell, **`package.json`**, etc.), run the checks below so
+**Prettier**, **markdownlint**, and **yamllint** stay green. Do not finish with failing
+**`npm run lint`** output for paths this repo owns.
+
+**Exception:** work confined to **`src/dotfiles/`** must follow **`src/dotfiles/AGENTS.md`**.
+Submodule-only edits there use that repo’s tooling. If the same turn also changes parent
+Markdown or YAML (for example submodule docs in the readme), **`npm run lint`** still applies
+to the parent checkout.
 
 ```bash
 npm install
 
-npx prettier --check .
+npm run lint
+
 shellcheck src/scripts/utils.sh \
   src/scripts/master.sh \
   src/scripts/run-install.sh \
   src/scripts/run-config.sh \
   src/scripts/install/*.sh \
   src/scripts/config/*.sh
-npx markdownlint-cli2 "**/*.md" "#node_modules" "#src/dotfiles/node_modules"
-yamllint .github .yamllint .markdownlint.yaml
 ```
 
-| If you edited               | Extra checks                                                                            |
-| --------------------------- | --------------------------------------------------------------------------------------- |
-| Markdown at repo root       | **`markdownlint-cli2`**                                                                 |
-| Workflows or lint configs   | **`yamllint`**                                                                          |
-| **`src/dotfiles/`** subtree | Run the submodule’s documented linters (**`npm ci`**, Stylua/Prettier, etc.) separately |
+**`npm run lint`** runs **`prettier --check .`**, **`markdownlint-cli2`** on `**/*.md`
+(excluding **`node_modules`** and **`src/dotfiles`**), and **`yamllint`** on **`.github`**,
+**`.yamllint`**, and **`.markdownlint.yaml`**. Install **`yamllint`** locally if missing (for example
+**`pip install yamllint`**).
 
-Install **`yamllint`** locally if missing (`pip install yamllint`). PRs reuse **garretpatten/quality-checks**.
+| If you edited               | Extra checks                                                                       |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| Markdown at repo root       | Covered by **`npm run lint`**; submodule Markdown uses dotfiles tooling separately |
+| Workflows or lint configs   | **`npm run lint:yaml`**                                                            |
+| **`src/dotfiles/`** subtree | Submodule linters (**`npm ci`** there per dotfiles **`AGENTS.md`**)                |
+
+Pull requests still run **garretpatten/quality-checks**.
 
 ## License
 

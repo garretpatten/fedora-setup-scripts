@@ -21,16 +21,18 @@ Use [GitHub Issues](https://github.com/garretpatten/fedora-setup-scripts/issues)
 ```bash
 npm install
 
-npx prettier --check .
+npm run lint
+
 shellcheck src/scripts/utils.sh \
   src/scripts/master.sh \
   src/scripts/run-install.sh \
   src/scripts/run-config.sh \
   src/scripts/install/*.sh \
   src/scripts/config/*.sh
-npx markdownlint-cli2 "**/*.md" "#node_modules" "#src/dotfiles/node_modules"
 ```
 
-YAML workflow edits are **`yamllint`**-scoped in CI; match **`.yamllint`** (80-character lines).
+**`npm run lint`** runs **Prettier** (**`prettier --check .`**), **`markdownlint-cli2`** over `**/*.md` excluding **`node_modules`** and **`src/dotfiles`**, and **`yamllint`** on **`.github`**, **`.yamllint`**, and **`.markdownlint.yaml`**.
 
-Documentation-only changes still need **`prettier`** and **`markdownlint`** on touched Markdown files.
+Keep YAML within **`.yamllint`** (80-character lines unless an existing waiver applies).
+
+Install **`yamllint`** locally when missing (for example **`pip install yamllint`**). Markdown or workflow-only changes still need a clean **`npm run lint`** before you open a PR.
