@@ -60,6 +60,13 @@ dev_tools=(
 )
 install_dnf_packages "${dev_tools[@]}"
 
+if command -v npm >/dev/null 2>&1; then
+    sudo npm install -g bash-language-server pyright typescript-language-server yaml-language-server \
+        --loglevel=error --no-update-notifier 2>>"$ERROR_LOG_FILE" || true
+fi
+
+install_dnf_packages "lua-language-server" || true
+
 if flatpak remote-info flathub >/dev/null 2>&1; then
     flatpak install -y flathub com.getpostman.Postman 2>>"$ERROR_LOG_FILE" || true
 fi
