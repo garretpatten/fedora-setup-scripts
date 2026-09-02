@@ -21,6 +21,7 @@ if ! rpm -q ghostty >/dev/null 2>&1; then
 fi
 
 font_packages=(
+    "fontawesome-fonts"
     "google-noto-emoji-fonts"
     "fira-code-fonts"
 )

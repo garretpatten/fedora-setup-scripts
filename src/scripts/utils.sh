@@ -187,6 +187,83 @@ clone_repository_safe() {
     }
 }
 
+# Dotfiles helpers — symlink src/dotfiles/config/<app>/ into ~/.config/<app>/ and copy manifest files.
+expand_home_path() {
+    local path="$1"
+
+    if [[ "${path:0:1}" != "~" ]]; then
+        printf '%s' "$path"
+        return 0
+    fi
+    if [[ "$path" == "~" ]]; then
+        printf '%s' "$HOME"
+    elif [[ "${path:1:1}" == "/" ]]; then
+        printf '%s/%s' "$HOME" "${path:2}"
+    else
+        printf '%s' "$path"
+    fi
+}
+
+copy_dotfile_file() {
+    local rel_src="$1"
+    local dest
+    dest="$(expand_home_path "$2")"
+    local src="$PROJECT_ROOT/src/dotfiles/$rel_src"
+
+    [[ -f "$dest" ]] && return 0
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest" 2>>"$ERROR_LOG_FILE" || {
+        log_error "failed to copy dotfile $rel_src to $dest"
+    }
+}
+
+link_dotfiles_xdg_config_dirs() {
+    local root="$PROJECT_ROOT/src/dotfiles"
+    local config_dir="$root/config"
+    [[ -d "$config_dir" ]] || return 0
+
+    shopt -s nullglob
+    local xdg="${XDG_CONFIG_HOME:-$HOME/.config}"
+    mkdir -p "$xdg"
+
+    local dir name src_abs target bak failed=0
+    for dir in "$config_dir/"*/; do
+        [[ -d "$dir" ]] || continue
+        name="$(basename "${dir%/}")"
+        src_abs="$(cd "${dir%/}" && pwd)"
+        target="${xdg}/${name}"
+
+        if [[ -e "$target" || -L "$target" ]] && [[ ! -L "$target" ]]; then
+            bak="${target}.dotfiles-bak-$(date +%Y%m%d%H%M%S)"
+            printf '%s exists; moving to %s\n' "$target" "$bak" >&2
+            mv "$target" "$bak" || failed=1
+        fi
+
+        if [[ "$(readlink "$target" 2>/dev/null)" == "$src_abs" ]]; then
+            continue
+        fi
+
+        ln -sfn "$src_abs" "$target"
+    done
+    shopt -u nullglob
+    [[ "$failed" -eq 0 ]]
+}
+
+install_dotfiles_from_manifest() {
+    local manifest="$1"
+    local line kind rel_src dest
+
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line// /}" ]] && continue
+
+        read -r kind rel_src dest <<< "$line"
+        if [[ "$kind" == file ]]; then
+            copy_dotfile_file "$rel_src" "$dest"
+        fi
+    done < "$manifest"
+}
+
 # GNOME gsettings helpers — only when desktop schemas are installed (e.g. not on minimal/CI images).
 gsettings_ok() {
     command -v gsettings >/dev/null 2>&1 || return 1
@@ -210,5 +287,6 @@ export -f log_error install_dnf_packages update_dnf_cache dnf_quiet_best_effort
 export -f systemd_running_pid1 ufw_configure_ok run_capture_on_fail
 export -f ensure_directory remove_empty_directory
 export -f copy_file_safe copy_directory_safe download_file_safe clone_repository_safe
+export -f expand_home_path copy_dotfile_file link_dotfiles_xdg_config_dirs install_dotfiles_from_manifest
 export -f gsettings_ok gsettings_set gsettings_schema_exists
 export PROJECT_ROOT SCRIPT_DIR SCRIPTS_DIR ERROR_LOG_FILE TEMP_DIR

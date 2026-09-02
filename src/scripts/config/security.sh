@@ -23,4 +23,18 @@ sudo ufw --force reset >/dev/null 2>&1 || true
 sudo ufw default deny incoming >/dev/null 2>&1 || true
 sudo ufw default allow outgoing >/dev/null 2>&1 || true
 sudo ufw allow ssh >/dev/null 2>&1 || true
+
+# LocalSend
+sudo ufw allow 53317/udp >/dev/null 2>&1 || true
+sudo ufw allow 53317/tcp >/dev/null 2>&1 || true
+
+# Docker DNS on host
+sudo ufw allow in proto udp from 172.16.0.0/12 to 172.17.0.1 port 53 comment 'allow-docker-dns' >/dev/null 2>&1 || true
+sudo ufw allow in proto udp from 192.168.0.0/16 to 172.17.0.1 port 53 comment 'allow-docker-dns' >/dev/null 2>&1 || true
+
+if command -v ufw-docker >/dev/null 2>&1; then
+    sudo ufw-docker install >/dev/null 2>&1 || true
+    sudo ufw reload >/dev/null 2>&1 || true
+fi
+
 sudo ufw --force enable >/dev/null 2>&1 || true

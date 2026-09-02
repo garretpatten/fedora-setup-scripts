@@ -26,6 +26,7 @@ python_packages=(
     "python3-devel"
 )
 install_dnf_packages "${python_packages[@]}"
+install_dnf_packages "python3-virtualenv" || true
 
 if command -v npm >/dev/null 2>&1; then
     sudo npm install -g @vue/cli --loglevel=error --no-update-notifier 2>>"$ERROR_LOG_FILE" || true
@@ -60,6 +61,64 @@ dev_tools=(
     "golang"
 )
 install_dnf_packages "${dev_tools[@]}"
+
+# Build essentials and language runtimes for LSP support (Ubuntu build-essential/lsp.packages parity).
+lsp_packages=(
+    "gcc-c++"
+    "glibc-devel"
+    "kernel-headers"
+    "composer"
+    "java-latest-openjdk-headless"
+    "lua-devel"
+    "luarocks"
+    "lua"
+    "php-cli"
+    "php-mbstring"
+    "php-xml"
+    "php-zip"
+    "ruby-devel"
+    "ruby"
+)
+install_dnf_packages "${lsp_packages[@]}" || true
+install_dnf_packages "julia" || true
+
+# Griffo tooling (lazygit, yazi, lazydocker).
+griffo_tools=(
+    "lazygit"
+    "yazi"
+)
+install_dnf_packages "${griffo_tools[@]}" || true
+if ! command -v lazydocker >/dev/null 2>&1; then
+    install_dnf_packages "lazydocker" || {
+        if command -v go >/dev/null 2>&1; then
+            run_capture_on_fail "go install lazydocker" go install github.com/jesseduffield/lazydocker@latest || true
+        fi
+    }
+fi
+
+# Rust toolchain.
+if [[ ! -f "$HOME/.cargo/env" ]]; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y 2>>"$ERROR_LOG_FILE" || true
+fi
+
+# Cursor CLI (best-effort; may require an interactive session).
+if ! command -v cursor >/dev/null 2>&1; then
+    curl -fsSL https://cursor.com/install | bash 2>>"$ERROR_LOG_FILE" || true
+fi
+
+# Ollama.
+if ! command -v ollama >/dev/null 2>&1; then
+    curl -fsSL https://ollama.com/install.sh | sh 2>>"$ERROR_LOG_FILE" || true
+fi
+
+# Build git-credential-libsecret from git contrib sources if not already present.
+if [[ -d "/usr/share/doc/git/contrib/credential/libsecret" ]]; then
+    credential_bin="/usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret"
+    if [[ ! -x "$credential_bin" ]]; then
+        install_dnf_packages "glib2-devel" || true
+        run_capture_on_fail "build git-credential-libsecret" bash -c 'cd /usr/share/doc/git/contrib/credential/libsecret && sudo make' || true
+    fi
+fi
 
 if command -v npm >/dev/null 2>&1; then
     sudo npm install -g bash-language-server pyright typescript-language-server yaml-language-server \

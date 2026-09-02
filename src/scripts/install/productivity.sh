@@ -17,7 +17,20 @@ install_dnf_packages "${office_packages[@]}" || install_dnf_packages "libreoffic
 
 if flatpak remote-info flathub >/dev/null 2>&1; then
     flatpak install -y flathub us.zoom.Zoom 2>>"$ERROR_LOG_FILE" || true
+    flatpak install -y flathub com.usebruno.Bruno 2>>"$ERROR_LOG_FILE" || true
 fi
+
+desktop_packages=(
+    "gnome-shell-extensions"
+    "gnome-tweaks"
+)
+install_dnf_packages "${desktop_packages[@]}" || true
+
+libreoffice_extras=(
+    "libreoffice-gtk4"
+    "libreoffice-style-breeze"
+)
+install_dnf_packages "${libreoffice_extras[@]}" || true
 
 productivity_packages=(
     "keepassxc"

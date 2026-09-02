@@ -32,4 +32,8 @@ if [[ -f "$fedora_art_file" ]]; then
     echo
 fi
 
+if command -v tldr >/dev/null 2>&1; then
+    tldr --update >/dev/null 2>&1 || true
+fi
+
 echo "Setup completed. Check $ERROR_LOG_FILE for any errors."

@@ -11,6 +11,14 @@ defense_tools=(
 )
 install_dnf_packages "${defense_tools[@]}"
 
+# ufw-docker helper script for Docker-aware firewall rules.
+if [[ ! -x /usr/local/bin/ufw-docker ]]; then
+    ufw_docker_tmp="$TEMP_DIR/ufw-docker"
+    if download_file_safe "https://github.com/chaifeng/ufw-docker/raw/master/ufw-docker" "$ufw_docker_tmp"; then
+        sudo install -m 755 "$ufw_docker_tmp" /usr/local/bin/ufw-docker 2>>"$ERROR_LOG_FILE" || true
+    fi
+fi
+
 fc=""
 if [[ -r /etc/os-release ]]; then
     # shellcheck source=/dev/null

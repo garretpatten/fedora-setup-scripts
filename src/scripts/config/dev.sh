@@ -7,6 +7,9 @@ source "$(dirname "$0")/../utils.sh"
 
 DOTFILES_ROOT="$PROJECT_ROOT/src/dotfiles"
 
+# Symlink all XDG config dirs and copy manifest files (Ubuntu dotfiles parity).
+run_capture_on_fail "dotfiles symlink sync" bash "$(dirname "$0")/dotfiles.sh"
+
 if [[ -d "$DOTFILES_ROOT/config" ]]; then
     copy_directory_safe "$DOTFILES_ROOT/config/nvim" "$HOME/.config/nvim"
     copy_directory_safe "$DOTFILES_ROOT/config/fastfetch" "$HOME/.config/fastfetch"
@@ -34,8 +37,14 @@ if [[ -d "$githooks_dir" ]] && ! git config --global core.hooksPath >/dev/null 2
     git config --global core.hooksPath "$githooks_dir" 2>>"$ERROR_LOG_FILE" || true
 fi
 
-if [[ ! -f "$HOME/.gitconfig" ]]; then
+credential_helper="/usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret"
+if [[ -x "$credential_helper" ]]; then
+    git config --global credential.helper "$credential_helper" 2>>"$ERROR_LOG_FILE" || true
+else
     git config --global credential.helper store 2>>"$ERROR_LOG_FILE" || true
+fi
+
+if [[ ! -f "$HOME/.gitconfig" ]]; then
     git config --global http.postBuffer 157286400 2>>"$ERROR_LOG_FILE" || true
     git config --global pack.window 1 2>>"$ERROR_LOG_FILE" || true
     git config --global user.email "garret.patten@proton.me" 2>>"$ERROR_LOG_FILE" || true
