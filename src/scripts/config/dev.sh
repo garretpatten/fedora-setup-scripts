@@ -25,6 +25,15 @@ if [[ ! -f "$vscode_settings" ]] && [[ -f "$DOTFILES_ROOT/vs-code/settings.json"
     copy_file_safe "$DOTFILES_ROOT/vs-code/settings.json" "$vscode_settings"
 fi
 
+# Shared Git pre-commit hook
+githooks_dir="$HOME/.config/githooks"
+if [[ -d "$DOTFILES_ROOT/config/githooks" ]]; then
+    copy_directory_safe "$DOTFILES_ROOT/config/githooks" "$githooks_dir"
+fi
+if [[ -d "$githooks_dir" ]] && ! git config --global core.hooksPath >/dev/null 2>&1; then
+    git config --global core.hooksPath "$githooks_dir" 2>>"$ERROR_LOG_FILE" || true
+fi
+
 if [[ ! -f "$HOME/.gitconfig" ]]; then
     git config --global credential.helper store 2>>"$ERROR_LOG_FILE" || true
     git config --global http.postBuffer 157286400 2>>"$ERROR_LOG_FILE" || true
