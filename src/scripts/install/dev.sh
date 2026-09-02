@@ -57,6 +57,7 @@ dev_tools=(
     "gh"
     "shellcheck"
     "git"
+    "golang"
 )
 install_dnf_packages "${dev_tools[@]}"
 
