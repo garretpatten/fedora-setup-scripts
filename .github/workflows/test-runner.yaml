@@ -93,3 +93,11 @@ jobs:
             fi
             rm -f "$FILTERED_LOG"
           fi
+
+      - name: Verify Google Chrome installation
+        run: |
+          if ! command -v google-chrome >/dev/null 2>&1; then
+            echo "❌ google-chrome not found"
+            exit 1
+          fi
+          google-chrome --version

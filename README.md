@@ -223,7 +223,7 @@ Brave (**official RPM repo**), VLC, **ffmpeg-free**/**ffmpeg**, Spotify (**Flatp
 
 #### 📊 **Productivity** (`install/productivity.sh`)
 
-LibreOffice (component set), Zoom (**Flatpak**), KeePassXC, Redshift,
+LibreOffice (component set), Zoom (**Flatpak**), Google Chrome, KeePassXC, Redshift,
 Flameshot, Balena Etcher AppImage
 
 #### 🔒 **Security packages & payloads** (`install/security.sh`)

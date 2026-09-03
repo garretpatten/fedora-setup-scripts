@@ -39,6 +39,12 @@ productivity_packages=(
 )
 install_dnf_packages "${productivity_packages[@]}"
 
+if ! command -v google-chrome >/dev/null 2>&1; then
+    sudo dnf install -y fedora-workstation-repositories 2>>"$ERROR_LOG_FILE" || true
+    sudo dnf config-manager --set-enabled google-chrome 2>>"$ERROR_LOG_FILE" || true
+    install_dnf_packages "google-chrome-stable" || true
+fi
+
 etcher_dir="$HOME/.local/bin"
 etcher_path="$etcher_dir/balenaEtcher.AppImage"
 if [[ ! -f "$etcher_path" ]]; then
