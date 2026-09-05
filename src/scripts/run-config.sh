@@ -1,18 +1,16 @@
 #!/bin/bash
 
-# GNOME/session defaults, home layout, UFW defaults, submodule dotfiles, shell.
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/env.sh
+source "$DIR/lib/env.sh"
+# shellcheck source=lib/run.sh
+source "$DIR/lib/run.sh"
+# shellcheck source=lib/git-submodules.sh
+source "$DIR/lib/git-submodules.sh"
+# shellcheck source=lib/zsh-login.sh
+source "$DIR/lib/zsh-login.sh"
 
-# shellcheck source=utils.sh
-source "$(dirname "$0")/utils.sh"
+ensure_submodules_synced "$PROJECT_ROOT"
+ensure_zshrc_login_safe
 
-CDIR="$SCRIPTS_DIR/config"
-
-run_config() {
-    bash "$1" 2>>"$ERROR_LOG_FILE" || log_error "Failed to execute $1"
-}
-
-run_config "$CDIR/system-config.sh"
-run_config "$CDIR/organizeHome.sh"
-run_config "$CDIR/dev.sh"
-run_config "$CDIR/security.sh"
-run_config "$CDIR/shell.sh"
+run_script "$DIR/config/all.sh"

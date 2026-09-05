@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Symlink every src/dotfiles/config/<app>/ directory into ~/.config/<app>/ and copy
-# manifest-listed files. Mirrors ubuntu-setup-scripts src/scripts/config/dotfiles.sh.
-
-# shellcheck source=../utils.sh
-source "$(dirname "$0")/../utils.sh"
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=../lib/env.sh
+source "$DIR/../lib/env.sh"
+# shellcheck source=../lib/dotfiles-install.sh
+source "$DIR/../lib/dotfiles-install.sh"
 
 link_dotfiles_xdg_config_dirs
-install_dotfiles_from_manifest "$(dirname "$0")/dotfiles.manifest"
+install_dotfiles_from_manifest "$DIR/dotfiles.manifest"

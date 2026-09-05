@@ -18,7 +18,7 @@
 <p align="center">
     <a href="./LICENSE"><img src="https://img.shields.io/github/license/garretpatten/fedora-setup-scripts?style=flat-square" alt="License: MIT" /></a>
     <a href="https://fedoraproject.org/"
-        ><img src="https://img.shields.io/badge/platform-Fedora%20Workstation%2038%2B-294172?style=flat-square&logo=fedora&logoColor=white" alt="Fedora Workstation 38 or newer"
+        ><img src="https://img.shields.io/badge/platform-Fedora%20Workstation%2040%2B-294172?style=flat-square&logo=fedora&logoColor=white" alt="Fedora Workstation 40 or newer"
     /></a>
     <img src="https://img.shields.io/badge/shell-bash-black?style=flat-square&logo=gnu-bash&logoColor=white" alt="Shell: Bash" />
     <img src="https://img.shields.io/badge/infra-DNF%20%2B%20Flatpak-3C6EB4?style=flat-square&logo=redhat&logoColor=white" alt="Package flows: DNF and Flatpak" />
@@ -61,17 +61,17 @@ machines. The layout and philosophy mirror [ubuntu-setup-scripts](https://github
 - **⚡ Efficient batching**: Fewer round-trips through DNF metadata where practical
 - **🔄 Idempotent**: Safe to rerun; helpers skip first-touch copies when targets exist
 - **📝 Centralized errors**: `setup_errors.log` aggregates script noise for triage
-- **🎯 Modular design**: Category scripts plus `master.sh`, `run-install.sh`, and `run-config.sh`
+- **🎯 Modular design**: Per-app/category scripts plus `master.sh`, `run-install.sh`, and `run-config.sh`
 - **⚙️ Install vs configuration**: Packages and installers live under `src/scripts/install/`; GNOME
   defaults, `dnf-automatic` timer, home layout, firewall posture, and dotfile copies live under
-  `src/scripts/config/`. Use **`npm run installs`**, **`npm run config`**, or **`npm run all`**, or
+  `src/scripts/config/`. Use **`npm run install:all`**, **`npm run config`**, or **`npm run all`**, or
   invoke runners directly.
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Fedora Workstation (GNOME) **38+** recommended; other spins may work with package name drift
+- Fedora Workstation (GNOME) **40+** recommended; other spins may work with package name drift
 - Network access and **sudo**
 
 ### Installation
@@ -98,9 +98,7 @@ git submodule update --init --remote --recursive src/dotfiles/
 1. **Make scripts executable**
 
 ```bash
-chmod +x src/scripts/*.sh \
-  src/scripts/install/*.sh \
-  src/scripts/config/*.sh
+chmod +x src/scripts/**/*.sh scripts/**/*.sh
 ```
 
 1. **Run the complete setup**
@@ -113,39 +111,67 @@ npm run all
 
 ### npm scripts
 
-| Command            | Runs                                                                                                         |
-| ------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `npm run all`      | Full provisioning (`master.sh`): installs interleaved with configuration (see execution flow below).         |
-| `npm run installs` | Install bundle only (`run-install.sh`): DNF/RPM, Flatpak, third-party installers — no GNOME/dotfiles.        |
-| `npm run config`   | Configuration bundle only (`run-config.sh`): defaults, home layout, firewall, submodule copies, shell.       |
-| `npm run lint`     | **Prettier**, **markdownlint-cli2**, **yamllint** (local checks; see **[CONTRIBUTING](./CONTRIBUTING.md)**). |
+| Command               | Runs                                                                                                         |
+| --------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `npm run all`         | Full provisioning (`master.sh`): config first, then installs, then remaining config.                         |
+| `npm run install:cli` | CLI-only install (`run-install.sh cli`): no desktop/media apps.                                              |
+| `npm run install:all` | Full install (`run-install.sh all`): CLI + desktop/native. Default when `run-install.sh` has no argument.    |
+| `npm run config`      | Configuration bundle only (`run-config.sh`): defaults, home layout, firewall, submodule copies, shell.       |
+| `npm run lint`        | **Prettier**, **markdownlint-cli2**, **yamllint** (local checks; see **[CONTRIBUTING](./CONTRIBUTING.md)**). |
 
 Bash equivalents:
 
 ```bash
-bash src/scripts/run-install.sh
-bash src/scripts/run-config.sh
-bash src/scripts/master.sh
+bash src/scripts/run-install.sh       # full install (default: all)
+bash src/scripts/run-install.sh cli   # CLI-only install
+bash src/scripts/run-install.sh all   # full install
+bash src/scripts/run-config.sh        # config only (submodules are synced)
+bash src/scripts/master.sh            # install + config
 ```
 
 Use **`npm run config`** when packages are already satisfied but GNOME or dotfiles subtrees should refresh after a submodule bump.
 
 ### Granular scripts
 
-Each category exists as **install** and/or **configuration** scripts (paths from repo root):
+Each category exists as per-app **install** and/or **configuration** scripts:
 
 ```bash
-bash src/scripts/install/cli.sh
-bash src/scripts/install/dev.sh
+bash src/scripts/install/all.sh                # full install orchestrator
+bash src/scripts/install/cli.sh                # CLI-only install wrapper
+bash src/scripts/install/preflight/all.sh      # DNF essentials + timezone
+bash src/scripts/install/packages/*.packages   # package lists
+bash src/scripts/install/repos/setup.sh        # vendor RPM repos
+bash src/scripts/install/apps/chrome.sh
+bash src/scripts/install/apps/proton-pass.sh
+bash src/scripts/install/dev/nvm.sh
+bash src/scripts/install/shell/oh-my-posh.sh
+bash src/scripts/install/post-install/all.sh   # maintenance + banner
 
-bash src/scripts/config/system-config.sh       # GNOME + dnf-automatic timer + sysctl + GDM guest hint
-bash src/scripts/config/organizeHome.sh
-bash src/scripts/config/dev.sh                 # Editors / XDG subtree + Git identity
-bash src/scripts/config/security.sh            # Disable firewalld (if present) + UFW posture
-bash src/scripts/config/shell.sh               # Submodule shell + terminal configs
+bash src/scripts/config/system/all.sh          # GNOME + dnf-automatic + sysctl + GDM guest hint
+bash src/scripts/config/home/all.sh            # home scaffold
+bash src/scripts/config/dev/all.sh             # dotfiles + Git identity
+bash src/scripts/config/security/all.sh        # disable firewalld + UFW posture
+bash src/scripts/config/shell/all.sh           # shell dotfiles + chsh
 ```
 
-Prefer the orchestrators so ordering stays predictable (for example **`install/security.sh`** before **`config/security.sh`**, **`install/shell.sh`** before **`config/shell.sh`**, and **`install/post-install.sh`** **docker**/**UFW** hooks before **`config/shell.sh`** in a full pass).
+Prefer the orchestrators so ordering stays predictable.
+
+### Validation scripts (`scripts/`)
+
+| Script                     | Use with                                   |
+| -------------------------- | ------------------------------------------ |
+| `validate-installs-cli.sh` | After `run-install.sh cli`                 |
+| `validate-installs.sh`     | After `run-install.sh all` or `master.sh`  |
+| `validate-config-only.sh`  | After `run-config.sh`                      |
+| `validate-config.sh`       | After `master.sh` or full install + config |
+| `validate.sh`              | After `master.sh` (installs + config)      |
+
+CI runs four jobs in a `fedora:latest` container:
+
+- `test-cli`: `run-install.sh cli` → `validate-installs-cli.sh`
+- `test-config`: `run-config.sh` → `validate-config-only.sh`
+- `test-full`: `run-install.sh all` → `validate-installs.sh`
+- `test-master`: `master.sh` → `validate.sh` (full installs + config)
 
 ## Project structure
 
@@ -153,45 +179,53 @@ Prefer the orchestrators so ordering stays predictable (for example **`install/s
 fedora-setup-scripts/
 ├── src/
 │   ├── scripts/
-│   │   ├── utils.sh
-│   │   ├── master.sh          # Full run — interleaved installs + configuration
-│   │   ├── run-install.sh     # DNF/Flatpak/installers/post-install hooks only
-│   │   ├── run-config.sh      # GNOME, home layout, firewall policy, dotfiles, shell
+│   │   ├── master.sh           # Full run — config then installs then remaining config
+│   │   ├── run-install.sh      # DNF/Flatpak/installers/post-install hooks only
+│   │   ├── run-config.sh       # GNOME, home layout, firewall policy, dotfiles, shell
+│   │   ├── lib/
+│   │   │   ├── env.sh
+│   │   │   ├── run.sh
+│   │   │   ├── parallel.sh
+│   │   │   ├── dnf-packages.sh
+│   │   │   ├── dnf-repo-add.sh
+│   │   │   ├── flatpak-install.sh
+│   │   │   ├── git-submodules.sh
+│   │   │   ├── gnome-session.sh
+│   │   │   ├── zsh-login.sh
+│   │   │   └── dotfiles-install.sh
 │   │   ├── install/
-│   │   │   ├── pre-install.sh
+│   │   │   ├── all.sh
 │   │   │   ├── cli.sh
-│   │   │   ├── media.sh
-│   │   │   ├── productivity.sh
-│   │   │   ├── dev.sh
-│   │   │   ├── security.sh
-│   │   │   ├── shell.sh       # Zsh/tmux, Ghostty (Fedora repos), fonts, Oh My Posh
-│   │   │   └── post-install.sh
+│   │   │   ├── packages/
+│   │   │   ├── apps/
+│   │   │   ├── dev/
+│   │   │   ├── shell/
+│   │   │   ├── repos/
+│   │   │   ├── preflight/
+│   │   │   └── post-install/
 │   │   └── config/
-│   │       ├── system-config.sh
-│   │       ├── organizeHome.sh
-│   │       ├── dev.sh
-│   │       ├── security.sh    # Stops firewalld when UFW is configured
-│   │       └── shell.sh
-│   ├── dotfiles/              # submodule
+│   │       ├── all.sh
+│   │       ├── system/
+│   │       ├── home/
+│   │       ├── dev/
+│   │       ├── security/
+│   │       └── shell/
+│   ├── dotfiles/               # submodule
 │   └── assets/
-└── ...
+│       └── fedora.txt          # completion banner
+└── scripts/                    # validation scripts
 ```
 
 ### Execution flow (`master.sh`)
 
-1. **`install/pre-install.sh`** — DNF refresh/upgrade, toolchain packages, timezone nudge off **UTC**
-2. **`config/system-config.sh`** — GNOME defaults when D-Bus/schemas exist; **`dnf-automatic`** timer; GDM **`AllowGuest`** hint; logind + sysctl keepalive drop-in
-3. **`config/organizeHome.sh`** — home scaffold and permissions
-4. **`install/cli.sh`** — Flatpak/Flathub, CLI stack (**`bat`**, **`eza`**, **`fd`**, **`fastfetch`**, **`btop`**, …)
-5. **`install/media.sh`**, **`install/productivity.sh`**
-6. **`install/dev.sh`** — NodeSource **24.x** RPM setup, NVM bootstrap, Python, Docker CE RPMs, Neovim,
-   **`gh`**, **`shellcheck`**, Postman (**Flatpak**), **`semgrep`**, **`src`** CLI
-7. **`config/dev.sh`** — selective copies from **`src/dotfiles/config/`**; Git globals; VS Code `settings.json`
-8. **`install/security.sh`** — **UFW**/OpenVPN RPMs, Proton VPN stable repo bootstrap, Proton Pass (**RPM** resolver), Signal & ZAP (**Flatpak**), clones under **`~/Hacking`**
-9. **`config/security.sh`** — stop/disable **firewalld** when present, then **UFW** defaults
-10. **`install/shell.sh`** — Zsh stack, **`ghostty`** when packaged upstream, Meslo Nerd Font drop, Oh My Posh
-11. **`install/post-install.sh`** — DNF maintenance, **docker** group, best-effort **UFW** enable, banner (**`src/assets/fedora.txt`**)
-12. **`config/shell.sh`** — **`home/`** dotfiles, **`~/.dotfiles_path`** for **`home/zsh/fedora.zsh`**, **`chsh`** when possible
+1. Initialize/update the `src/dotfiles` submodule.
+2. **`install/preflight/all.sh`** — DNF refresh, toolchain packages, timezone nudge off **UTC**
+3. **`config/system/all.sh`** — GNOME defaults when D-Bus/schemas exist; **`dnf-automatic`** timer; GDM **`AllowGuest`** hint; logind + sysctl keepalive drop-in
+4. **`config/home/all.sh`** — home scaffold and permissions
+5. **`install/all.sh`** — package lists, vendor repos, per-app installers
+6. **`config/dev/all.sh`** — dotfiles symlinks/manifest + Git globals
+7. **`config/security/all.sh`** — stop/disable **firewalld** when present, then **UFW** defaults
+8. **`config/shell/all.sh`** — shell dotfiles + best-effort **`chsh`**
 
 ---
 
@@ -201,55 +235,64 @@ The lists below mirror the **`install/`** and **`config/`** split; open each scr
 
 ### **`install/` bundle**
 
-#### 🧰 **Bootstrap** (`install/pre-install.sh`)
+#### 🧰 **Bootstrap** (`install/preflight/all.sh`)
 
-- DNF upgrade/autoremove housekeeping; **`git`**, **`curl`**, **`wget`**, **`gnupg`**, **`dnf-plugins-core`**, **`unzip`**, **`file`**
+- DNF cache refresh; **`git`**, **`curl`**, **`wget`**, **`gnupg2`**, **`dnf-plugins-core`**, **`unzip`**, **`file`**
 - Timezone nudge from **UTC** toward **America/New_York** when unchanged
 
-#### 🛠️ **CLI tools** (`install/cli.sh`)
+#### 📦 **Package lists** (`install/packages/*.packages`)
 
-- Flatpak + Flathub.
-- **`bat`**, **`curl`**, **`eza`**, **`fd`**, **`git`**, **`htop`**, **`jq`**, **`ripgrep`**, **`vim-enhanced`**,
-  **`wget`**, **`btop`**, **`fastfetch`**
+Plain-text package lists consumed by `lib/dnf-packages.sh`:
 
-#### 💻 **Development packages** (`install/dev.sh`)
+- `base.packages` — CLI/security essentials: `bat`, `btop`, `eza`, `fd`, `fzf`, `gh`, `htop`, `jq`, `nmap`, `openvpn`, `ripgrep`, `shellcheck`, `tealdeer`, `tree-sitter-cli`, `ufw`, `vim-enhanced`, `zoxide`, ...
+- `shell.packages` — `zsh`, `tmux`, `fontawesome-fonts`, `fira-code-fonts`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
+- `media.packages` — `vlc`, `ffmpeg-free`
+- `desktop.packages` — `gnome-shell-extensions`, `gnome-tweaks`
+- `productivity.packages` — `flameshot`, `keepassxc`, `libreoffice`, `redshift`
+- `dev.packages` — `neovim`, `python3` stack
+- `lsp.packages` — build essentials + language runtimes for LSP support
+- `griffo.packages` — `lazygit`, `lazydocker`, `yazi`
+- `third-party-cli.packages` — Docker CE stack, NodeSource `nodejs`
+- `third-party-desktop.packages` — `brave-browser`, appindicator support
 
-- **Node.js** from NodeSource Fedora setup (**24.x** line), NVM installer when missing,
-  **`@vue/cli`** globally when **`npm`** is available, **`python3`** stack, Docker CE **`.repo`**, **`docker-compose-plugin`**, **`neovim`**, **`gh`**, **`shellcheck`**, **`semgrep`** (pip), **`src`** (Sourcegraph), Postman (**Flatpak**)
+#### 🛠️ **Development installers** (`install/dev/`)
 
-#### 🎬 **Media** (`install/media.sh`)
+- **Node.js** from NodeSource RPM repo, NVM installer when missing, **`@vue/cli`** globally
+- **Python**, **Docker CE** repo, **`docker-compose-plugin`**, **Neovim**, **`gh`**, **`shellcheck`**
+- **Language servers**: npm-based + best-effort `lua-language-server` binary
+- **`semgrep`** (pip), **`rustup`**, **Cursor CLI**, **Ollama**
 
-Brave (**official RPM repo**), VLC, **ffmpeg-free**/**ffmpeg**, Spotify (**Flatpak** — **RPM Fusion** helps for fuller FFmpeg codecs)
+#### 🎬 **Media** (`install/apps/` + Flatpak)
 
-#### 📊 **Productivity** (`install/productivity.sh`)
+Brave (official RPM repo), VLC, **ffmpeg-free**, Spotify (**Flatpak**)
 
-LibreOffice (component set), Zoom (**Flatpak**), Google Chrome, KeePassXC, Redshift,
-Flameshot, Balena Etcher AppImage
+#### 📊 **Productivity** (`install/apps/` + Flatpak)
 
-#### 🔒 **Security packages & payloads** (`install/security.sh`)
+LibreOffice, Zoom (**Flatpak**), Google Chrome, KeePassXC, Redshift,
+Flameshot, Balena Etcher AppImage, Bruno (**Flatpak**)
 
-- **`ufw`**, **`openvpn`**
-- **Proton VPN** stable release RPM + **`proton-vpn-gnome-desktop`** (skipped without **systemd** as PID 1 —
-  containers/CI-friendly)
-- **Proton Pass** desktop RPM (version.json resolver with fallbacks) + CLI tarball
-- Signal (**Flatpak**), **`nmap`**, **`perl-Image-ExifTool`**, OWASP ZAP (**Flatpak**)
-- Optional clones **`PayloadsAllTheThings`** / **`SecLists`** under **`~/Hacking`**
+#### 🔒 **Security packages & payloads** (`install/apps/`)
 
-#### 🐚 **Shell tooling** (`install/shell.sh`)
+- **`ufw`**, **`openvpn`**, **`nmap`**, **`perl-Image-ExifTool`**
+- OWASP ZAP (**Flatpak**), Proton Pass CLI
+- **`~/Hacking`** clones and the **`ufw-docker`** helper
+- Proton VPN/Pass desktop RPMs and Signal (**Flatpak**)
 
-Zsh + plugins, **`tmux`**, **`ghostty`** from enabled repos (**[Ghostty install docs](https://ghostty.org/docs/install)** for unsupported releases), Google Noto Emoji + Fira Code fonts, Meslo Nerd Font drop, user Oh My Posh + shared themes when **`/usr/share/oh-my-posh/themes`** is empty
+#### 🐚 **Shell tooling** (`install/shell/`)
 
-#### 🏁 **Post maintenance** (`install/post-install.sh`)
+Zsh + plugins, **`tmux`**, **`ghostty`** from enabled repos, Google Noto Emoji + Fira Code fonts, Meslo Nerd Font drop, user Oh My Posh
 
-**`dnf upgrade`** + autoremove, **docker** daemon + group membership, best-effort **`ufw`** enable, completion banner
+#### 🏁 **Post maintenance** (`install/post-install/all.sh`)
+
+`dnf upgrade` + autoremove, **docker** daemon + group membership, **`tldr --update`**, completion banner
 
 ### **`config/` bundle**
 
-#### 🏠 **Home layout** (`config/organizeHome.sh`)
+#### 🏠 **Home layout** (`config/home/all.sh`)
 
 Same structure as the Ubuntu sibling (`Projects`, `Hacking`, **`AppImages`**, etc.) with sane perms.
 
-#### ⚙️ **Desktop & automatic updates** (`config/system-config.sh`)
+#### ⚙️ **Desktop & automatic updates** (`config/system/all.sh`)
 
 - **GNOME** when available (mirrors Ubuntu defaults: dark UI, Nautilus ergonomics, Dash to Dock when installed, Night Light, privacy toggles)
 - **`dnf-automatic`** timer enablement (adjust **`/etc/dnf/automatic.conf`** locally if you want download-only vs applied updates)
@@ -257,17 +300,17 @@ Same structure as the Ubuntu sibling (`Projects`, `Hacking`, **`AppImages`**, et
 
 Minimal/CI runners without GNOME sessions skip **`gsettings`** safely.
 
-#### 💻 **Editor & Git prefs** (`config/dev.sh`)
+#### 💻 **Editor & Git prefs** (`config/dev/all.sh`)
 
-Selective copies from **`src/dotfiles/config/`** into **`~/.config/`**, VS Code **`settings.json`** seed, first-touch **`~/.gitconfig`**.
+Dotfiles symlinks/manifest, VS Code **`settings.json`** seed, first-touch **`~/.gitconfig`**.
 
-#### 🔒 **UFW posture** (`config/security.sh`)
+#### 🔒 **UFW posture** (`config/security/all.sh`)
 
 Stops/disables **firewalld** when the unit exists, then **`ufw`** reset/deny-in/allow-out/SSH/enable when **iptables filter** works (minimal containers skip quietly).
 
-#### 🐚 **Shell dotfiles** (`config/shell.sh`)
+#### 🐚 **Shell dotfiles** (`config/shell/all.sh`)
 
-Ghostty, oh-my-posh, modular tmux tree, **`home/`** files, **`~/.dotfiles_path`**, **`chsh`** best-effort.
+Modular tmux tree, oh-my-posh, Ghostty configs, home files, best-effort **`chsh`**.
 
 **Full symlink mirror** from **`src/dotfiles`**: **`./setup.sh --link-xdg-config`** (see the [dotfiles README](https://github.com/garretpatten/dotfiles/blob/master/README.md)).
 
@@ -281,7 +324,7 @@ Ghostty, oh-my-posh, modular tmux tree, **`home/`** files, **`~/.dotfiles_path`*
 
 1. **Re-login** after **docker** group and default shell changes.
 1. **GNOME**: some `gsettings` tweaks need an active session.
-1. **Firewall**: `config/security.sh` **stops firewalld** to run **UFW** like the Ubuntu twin—if you rely on **firewalld** zones, fork that script.
+1. **Firewall**: `config/security/ufw-rules.sh` **stops firewalld** to run **UFW** like the Ubuntu twin—if you rely on **firewalld** zones, fork that script.
 1. **Night Light vs Redshift**: pick one warm-light policy.
 1. **Subscriptions & sign-in**: Brave, Proton, Signal, Spotify, etc. still require user auth.
 
@@ -290,7 +333,7 @@ Ghostty, oh-my-posh, modular tmux tree, **`home/`** files, **`~/.dotfiles_path`*
 ### Permission errors
 
 ```bash
-chmod +x src/scripts/*.sh src/scripts/install/*.sh src/scripts/config/*.sh
+chmod +x src/scripts/**/*.sh scripts/**/*.sh
 ```
 
 ### DNF failures
@@ -318,8 +361,7 @@ chsh -s "$(command -v zsh)"
 
 ## 🛡️ Security features
 
-- Hashed/verified downloads via shared helpers
-- GPG keys imported for vendor RPM repositories (Brave, Docker CE, NodeSource, Proton VPN)
+- Vendor RPM repositories with GPG keys (Brave, Docker CE, NodeSource, Proton VPN)
 - Firewall defaults with SSH allowance
 - Temporary assets under **`/tmp/fedora-setup-$$`**
 
