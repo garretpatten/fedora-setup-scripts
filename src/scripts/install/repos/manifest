@@ -1,0 +1,12 @@
+# RPM repository setup manifest (pipe-delimited).
+# kind|arg1|arg2|...
+#
+# docker
+# brave
+# nodesource|NODE_MAJOR
+# rpm-key|key_url|key_id_grep
+# repo-url|repo_url|repo_file_path
+
+docker
+brave
+nodesource|24

@@ -1,0 +1,17 @@
+composer
+gcc-c++
+glibc-devel
+golang
+gzip
+java-latest-openjdk-headless
+kernel-headers
+lua
+lua-devel
+luarocks
+php-cli
+php-mbstring
+php-xml
+php-zip
+ruby
+ruby-devel
+tar
