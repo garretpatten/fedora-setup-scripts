@@ -3,6 +3,10 @@
 credential_helper="/usr/share/doc/git/contrib/credential/libsecret/git-credential-libsecret"
 if [[ -x "$credential_helper" ]]; then
     git config --global credential.helper "$credential_helper"
+else
+    # Helper binary is built by install; still record the intended helper so
+    # the credential path is configured on config-only environments.
+    git config --global credential.helper "$credential_helper" || true
 fi
 
 # Shared Git pre-commit hook (symlinked by config/dotfiles.sh)

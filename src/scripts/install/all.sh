@@ -54,6 +54,8 @@ RPM_SCRIPTS=(
     apps/chrome.sh
     apps/etcher.sh
     apps/proton-pass.sh
+    apps/zoom.sh
+    apps/bruno.sh
 )
 
 echo "==> Installing base dnf packages..."

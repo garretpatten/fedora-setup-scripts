@@ -72,8 +72,8 @@ validate_productivity() {
     check_rpm keepassxc keepassxc
     check_command redshift redshift
     check_version flameshot flameshot --version
-    check_flatpak zoom us.zoom.Zoom
-    check_flatpak bruno com.usebruno.Bruno
+    check_rpm zoom zoom
+    check_rpm bruno bruno
     check_rpm gnome-tweaks gnome-tweaks
     check_rpm gnome-shell-extensions gnome-shell-extension-common
     check_version google-chrome google-chrome-stable --version

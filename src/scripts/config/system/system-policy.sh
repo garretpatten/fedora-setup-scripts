@@ -16,8 +16,15 @@ fi
 
 sudo env RESTART_LOGIND="$restart_logind" bash <<'EOF'
 gdm_conf="/etc/gdm/custom.conf"
-if [[ -f "$gdm_conf" ]] && ! grep -qE "^AllowGuest=false" "$gdm_conf" 2>/dev/null && grep -q "^\[daemon\]" "$gdm_conf" 2>/dev/null; then
-    sed -i "/^\[daemon\]/a AllowGuest=false" "$gdm_conf" || true
+if [[ -f "$gdm_conf" ]] && ! grep -qE "^AllowGuest=false" "$gdm_conf" 2>/dev/null; then
+    if grep -q "^\[daemon\]" "$gdm_conf" 2>/dev/null; then
+        sed -i "/^\[daemon\]/a AllowGuest=false" "$gdm_conf" || true
+    else
+        # Default custom.conf only has commented-out sections; create the section.
+        printf '[daemon]\nAllowGuest=false\n\n' >"$gdm_conf.tmp" \
+            && cat "$gdm_conf" >>"$gdm_conf.tmp" \
+            && mv "$gdm_conf.tmp" "$gdm_conf" || true
+    fi
 fi
 
 logind_dropin="/etc/systemd/logind.conf.d/50-lid.conf"

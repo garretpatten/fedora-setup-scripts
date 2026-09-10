@@ -2,7 +2,5 @@
 
 com.getpostman.Postman
 com.spotify.Client
-com.usebruno.Bruno
 org.signal.Signal
 org.zaproxy.ZAP
-us.zoom.Zoom
