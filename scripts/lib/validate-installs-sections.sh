@@ -1,6 +1,19 @@
 #!/usr/bin/env bash
 # Shared install validation sections used by validate-installs*.sh.
 # Sourcing scripts are expected to set PATH and source validate-common.sh first.
+# VALIDATE_INSTALLS_MODE=cli skips desktop-only checks (CLI install never runs flatpaks/desktop apps).
+
+VALIDATE_INSTALLS_MODE="${VALIDATE_INSTALLS_MODE:-all}"
+
+skip_flatpak_check_when_cli() {
+    local name="$1"
+    local app_id="$2"
+    if [[ "$VALIDATE_INSTALLS_MODE" == cli ]]; then
+        pass "$name" "optional (desktop flatpak skipped in CLI mode)"
+    else
+        check_flatpak "$name" "$app_id"
+    fi
+}
 
 validate_preflight() {
     section 'Preflight'
@@ -42,7 +55,7 @@ validate_cli_packages() {
 validate_media() {
     section 'Media'
     check_version brave brave-browser --version
-    check_version vlc vlc --version
+    check_rpm vlc vlc
     if command -v ffmpeg >/dev/null 2>&1; then
         check_version ffmpeg ffmpeg -version
     elif command -v ffmpeg-free >/dev/null 2>&1; then
@@ -96,7 +109,7 @@ validate_dev() {
     check_version gh gh --version
     check_version shellcheck shellcheck --version
     check_version docker docker --version
-    check_version docker-compose 'docker compose version'
+    check_version docker-compose docker compose version
     if [[ "$(cat /proc/1/comm 2>/dev/null)" != "systemd" ]]; then
         pass docker-daemon 'optional (skipped without systemd PID 1)'
     elif docker info >/dev/null 2>&1; then
@@ -133,7 +146,7 @@ validate_dev() {
     else
         pass ollama 'optional (best-effort install)'
     fi
-    check_flatpak postman com.getpostman.Postman
+    skip_flatpak_check_when_cli postman com.getpostman.Postman
     check_command bash-language-server bash-language-server
     check_command pyright pyright
     check_command typescript-language-server typescript-language-server
@@ -152,7 +165,7 @@ validate_security_cli() {
     check_version nmap nmap --version
     check_version exiftool exiftool -ver
     check_path ufw-docker /usr/local/bin/ufw-docker
-    check_flatpak zap org.zaproxy.ZAP
+    skip_flatpak_check_when_cli zap org.zaproxy.ZAP
     check_command pass-cli pass-cli
     check_path hacking-payloads "$HOME/Hacking/PayloadsAllTheThings"
     check_path hacking-seclists "$HOME/Hacking/SecLists"

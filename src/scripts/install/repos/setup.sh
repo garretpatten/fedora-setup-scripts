@@ -31,6 +31,13 @@ while IFS= read -r line || [[ -n "$line" ]]; do
                 IFS='|' read -r _ repo_url repo_file <<< "$line"
                 setup_repo_from_manifest_line "$kind" "$repo_url" "$repo_file"
                 ;;
+            copr)
+                IFS='|' read -r _ copr_id <<< "$line"
+                setup_copr_repo "$copr_id"
+                ;;
+            rpmfusion-free)
+                setup_rpmfusion_free_repo
+                ;;
         esac
     ) &
     pids+=($!)

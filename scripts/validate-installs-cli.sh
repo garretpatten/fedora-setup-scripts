@@ -6,6 +6,8 @@ cd "$(dirname "$0")/.." || exit 1
 
 export PATH="${HOME}/.cargo/bin:${HOME}/.local/bin:/usr/local/bin:${PATH}"
 
+export VALIDATE_INSTALLS_MODE=cli
+
 # shellcheck source=lib/validate-common.sh
 source "$(dirname "$0")/lib/validate-common.sh"
 # shellcheck source=lib/validate-installs-sections.sh
