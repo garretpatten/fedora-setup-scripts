@@ -62,7 +62,7 @@ validate_productivity() {
     check_flatpak zoom us.zoom.Zoom
     check_flatpak bruno com.usebruno.Bruno
     check_rpm gnome-tweaks gnome-tweaks
-    check_rpm gnome-shell-extensions gnome-shell-extensions
+    check_rpm gnome-shell-extensions gnome-shell-extension-common
     check_version google-chrome google-chrome-stable --version
     check_path etcher "$HOME/.local/bin/balenaEtcher.AppImage"
 }
@@ -191,7 +191,7 @@ validate_shell() {
     fi
     check_rpm zsh-autosuggestions zsh-autosuggestions
     check_rpm zsh-syntax-highlighting zsh-syntax-highlighting
-    check_rpm fontawesome-fonts fontawesome-fonts
+    check_rpm fontawesome-fonts-all fontawesome-fonts-all
     check_rpm fira-code-fonts fira-code-fonts
     check_path meslo-nerd-font /usr/share/fonts/meslo-nerd-font
     if command -v ghostty >/dev/null 2>&1; then
@@ -204,5 +204,5 @@ validate_shell() {
 validate_gnome() {
     section 'GNOME'
     check_rpm gnome-tweaks gnome-tweaks
-    check_rpm gnome-shell-extensions gnome-shell-extensions
+    check_rpm gnome-shell-extensions gnome-shell-extension-common
 }

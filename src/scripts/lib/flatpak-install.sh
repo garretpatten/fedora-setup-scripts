@@ -7,7 +7,10 @@ install_flatpak_if_missing() {
         return 0
     fi
 
-    flatpak install -y flathub "$app_id" || true
+    if ! flatpak install -y flathub "$app_id"; then
+        sleep 5
+        flatpak install -y flathub "$app_id" || true
+    fi
 }
 
 install_flatpaks_from_file() {

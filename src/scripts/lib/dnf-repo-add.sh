@@ -30,6 +30,31 @@ install_repo_file_from_url() {
     fi
 }
 
+setup_copr_repo() {
+    local copr="$1"
+
+    if [[ -z "$copr" ]]; then
+        return 0
+    fi
+
+    if dnf copr list --enabled 2>/dev/null | grep -q "^${copr}$"; then
+        return 0
+    fi
+    sudo dnf copr enable -y "$copr" || true
+}
+
+setup_rpmfusion_free_repo() {
+    if rpm -q rpmfusion-free-release >/dev/null 2>&1; then
+        return 0
+    fi
+
+    local release
+    release="$(rpm -E %fedora 2>/dev/null)"
+    [[ -z "$release" || "$release" == '%fedora' ]] && return 0
+
+    sudo dnf install -y "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${release}.noarch.rpm" || true
+}
+
 setup_docker_repo() {
     local repo_file="/etc/yum.repos.d/docker-ce.repo"
     [[ -f "$repo_file" ]] && return 0
@@ -71,6 +96,12 @@ setup_repo_from_manifest_line() {
             ;;
         nodesource)
             setup_nodesource_repo "$1"
+            ;;
+        copr)
+            setup_copr_repo "$1"
+            ;;
+        rpmfusion-free)
+            setup_rpmfusion_free_repo
             ;;
         rpm-key)
             local key_url="$1"

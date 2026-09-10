@@ -1,2 +1,6 @@
-gnome-shell-extensions
+gnome-shell-extension-common
+gnome-shell-extension-apps-menu
+gnome-shell-extension-launch-new-instance
+gnome-shell-extension-window-list
+gnome-shell-extension-background-logo
 gnome-tweaks

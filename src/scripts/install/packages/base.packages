@@ -4,6 +4,8 @@ bat
 btop
 ca-certificates
 curl
+dnf-plugins-core
+dnf5-plugins
 eza
 fd-find
 file

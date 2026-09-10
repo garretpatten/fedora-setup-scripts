@@ -14,7 +14,7 @@ validate_config_dotfiles() {
     check_path dotfiles-zsh "$HOME/.config/zsh"
     check_path zshrc "$HOME/.zshrc"
     check_path bashrc "$HOME/.bashrc"
-    check_path tmux-conf "$HOME/.tmux.conf"
+    check_path tmux-conf "$HOME/.config/tmux/tmux.conf"
 }
 
 validate_config_home() {
