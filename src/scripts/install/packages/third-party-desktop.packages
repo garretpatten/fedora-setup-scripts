@@ -1,0 +1,5 @@
+# Third-party RPM packages for desktop/GUI apps (repos configured before install).
+
+brave-browser
+gnome-shell-extension-appindicator
+libappindicator-gtk3

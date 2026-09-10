@@ -1,20 +1,14 @@
 # Agent guide — fedora-setup-scripts
 
-Bash automation for Fedora Workstation developer machines: modular install scripts, shared helpers, and a
-`src/dotfiles` git submodule. Changes should stay **idempotent**, **safe to re-run**, and compatible
-with **non-GNOME/CI shells** (`gsettings` guarded).
-
-## Repository layout
-
-| Path                   | Purpose                                                                                             |
-| ---------------------- | --------------------------------------------------------------------------------------------------- |
-| `src/scripts/`         | `utils.sh`, `master.sh`, `run-install.sh`, `run-config.sh`                                          |
-| `src/scripts/install/` | DNF/RPM, Flatpak, COPR/third-party installers, repo clones                                          |
-| `src/scripts/config/`  | GNOME defaults, **`dnf-automatic`** timer/GDM tweaks, firewall policy, submodule copies, **`chsh`** |
-| `src/scripts/utils.sh` | Helpers, `SCRIPTS_DIR`, paths, logging, safe copies/downloads                                       |
-| `src/dotfiles/`        | Submodule — [garretpatten/dotfiles](https://github.com/garretpatten/dotfiles)                       |
-| `src/assets/`          | Completion ASCII banner (`fedora.txt`)                                                              |
-| `.github/workflows/`   | Fedora container test harness + reusable quality/security callers                                   |
+Fedora provisioning scripts under `src/scripts/`: Omarchy-style per-app install/config
+scripts, orchestrated by `master.sh`, `run-install.sh`, and `run-config.sh`.
+`run-install.sh` accepts `cli` (CLI-only) or `all` (CLI + desktop/native); npm
+shortcuts are `npm run install:cli`, `npm run install:all`, `npm run config`, and
+`npm run all`. The `src/dotfiles` submodule is maintained separately. **Never edit,
+commit, or bump `src/dotfiles` from this repo** unless the user explicitly asks.
+Consume it read-only via `link_dotfiles_xdg_config_dirs` in `config/dotfiles.sh`
+(symlinks each `src/dotfiles/config/<app>/` under `~/.config/`) and targeted file copies.
+`run-config.sh` and `master.sh` initialize/update submodules before running config.
 
 ## Dotfiles submodule
 
@@ -30,108 +24,114 @@ If a dotfiles change is needed:
 3. Commit the submodule pointer change:
    `git add src/dotfiles && git commit -m "Bump dotfiles submodule"`
 
-### Orchestration
+## Before you finish
 
-- **`master.sh`**: `install/pre-install.sh` → `config/system-config.sh` → `config/organizeHome.sh`
-  → `install/cli.sh` → `install/media.sh` → `install/productivity.sh` → `install/dev.sh`
-  → `config/dev.sh` → `install/security.sh` → `config/security.sh` → `install/shell.sh`
-  → `install/post-install.sh` → `config/shell.sh`.
-- **`run-install.sh`**: **`install/`** only (`$SCRIPTS_DIR/install`).
-- **`run-config.sh`**: **`config/`** only (`$SCRIPTS_DIR/config`).
-- **`npm run all`** / **`npm run installs`** / **`npm run config`** delegate to those scripts (**`npm install`** at repo root first).
+**Do not consider shell or workflow work complete until ShellCheck passes the same way CI does.**
 
-## Script conventions
-
-Scripts in **`install/`** and **`config/`**:
-
-1. `#!/bin/bash`, `# shellcheck source=../utils.sh`, `source "$(dirname "$0")/../utils.sh"`.
-2. Top-level **`master.sh`** / **`run-*.sh`**: `# shellcheck source=utils.sh` + `source "$(dirname "$0")/utils.sh"`.
-
-3. Prefer helpers from **`utils.sh`** (**`install_dnf_packages`**, **`run_capture_on_fail`**,
-   **`copy_directory_safe`**, **`download_file_safe`**, **`gsettings_ok`**, …).
-
-4. Preserve the soft-failure style: **`log_error`** for actionable failures, **`|| true`** where installs are optional.
-   Do not stream **successful** noise into **`setup_errors.log`** (**`master.sh`** tees child **stderr** there); use **`run_capture_on_fail`**, quiet **`dnf`/flatpak wrappers**, **`>/dev/null`** for systemd/UFW in CI, instead of blindly **`2>>"$ERROR_LOG_FILE"`**.
-
-5. **Headless-safe**: **`config/security.sh`** no-ops when **`ufw`** is unavailable **or iptables tables cannot load** (typical CI containers); **`gsettings`** only when **`gsettings_ok`**.
-
-Paths:
-
-- **`PROJECT_ROOT`** is the repo root (two levels above **`src/scripts`**).
-- Dotfiles checkout: **`$PROJECT_ROOT/src/dotfiles`**. **`config/dev.sh`** and **`config/shell.sh`** mirror the Ubuntu/Mac siblings’ selective copies; **`home/.tmux.conf`** pulls modular **`config/tmux/`** once synced.
-- **`~/.dotfiles_path`** resolves **`DOTFILES`** for **`home/zsh/fedora.zsh`** exports.
-
-Submodule workflow:
+From the repository root:
 
 ```bash
-git submodule update --init --recursive src/dotfiles/
+chmod +x scripts/check-shellcheck.sh
+./scripts/check-shellcheck.sh
 ```
 
-Content edits upstream in **`dotfiles`**; bump submodule pointers intentionally when subtree copies must change here.
+That runs `shellcheck -x` on **changed** `*.sh` / `*.bash` / `*.zsh` files vs `origin/master`
+(matching [quality-checks](https://github.com/garretpatten/quality-checks)). Uses
+`.shellcheckrc` (`external-sources=true`, `source-path=SCRIPTDIR`).
+
+To lint all setup scripts locally:
+
+```bash
+shellcheck -x src/scripts/**/*.sh
+# or
+find src/scripts -name '*.sh' -print0 | xargs -0 shellcheck -x
+```
+
+### ShellCheck conventions
+
+- Leaf scripts under `install/` and `config/` should be plain commands; avoid
+  `source utils.sh` and wrapper functions.
+- Orchestrators (`master.sh`, `*/all.sh`) source `lib/env.sh`, `lib/run.sh`, and
+  `# shellcheck source=...` for any other `lib/*.sh` they use.
+- Do not use `A && B || C` for conditional execution (CI reports **SC2015**). Use
+  `if` / `then` / `fi` instead.
+- `|| true` on a single command is fine for best-effort provisioning.
+
+### Other CI linters
+
+`.github/workflows/quality-checks.yaml` also runs Prettier, markdownlint, and yamllint on
+pull requests. Prettier and markdownlint are installed via `npm ci`; yamllint is a Python
+tool. Run the relevant tools when you touch those file types:
+
+```bash
+npm ci
+npx prettier --check .
+npx markdownlint --ignore node_modules '**/*.md'
+yamllint .
+```
+
+### Test workflow
+
+`.github/workflows/test-runner.yaml` runs four jobs on `fedora:latest`:
+
+- `test-cli`: `run-install.sh cli` → `scripts/validate-installs-cli.sh`
+- `test-config`: `run-config.sh` → `scripts/validate-config-only.sh`
+- `test-full`: `run-install.sh all` → `scripts/validate-installs.sh`
+- `test-master`: `master.sh` → `scripts/validate.sh` (full installs + config)
+
+GNOME gsettings scripts no-op without an active GNOME session.
+
+## Layout
+
+| Path                                                        | Role                                                    |
+| ----------------------------------------------------------- | ------------------------------------------------------- |
+| `src/scripts/lib/env.sh`                                    | `PROJECT_ROOT`, `TEMP_DIR`                              |
+| `src/scripts/lib/run.sh`                                    | `run_script` helper (forwards extra args)               |
+| `src/scripts/lib/gnome-session.sh`                          | Skip GNOME config when not on GNOME                     |
+| `src/scripts/lib/zsh-login.sh`                              | `.zshrc` pass-cli guard for provisioning                |
+| `src/scripts/lib/git-submodules.sh`                         | Initialize/update submodules before config              |
+| `src/scripts/lib/dnf-packages.sh`                           | `install_dnf_packages_from_file` helper                 |
+| `src/scripts/lib/dnf-repo-add.sh`                           | RPM repository/key helpers                              |
+| `src/scripts/lib/flatpak-install.sh`                        | Flatpak app install helpers                             |
+| `src/scripts/install/all.sh`                                | Full install orchestrator (`--cli` for CLI-only)        |
+| `src/scripts/install/cli.sh`                                | Wrapper that runs `install/all.sh --cli`                |
+| `src/scripts/install/packages/*.packages`                   | DNF package lists (one per line)                        |
+| `src/scripts/install/packages/third-party-cli.packages`     | Docker/NodeSource packages for CLI install              |
+| `src/scripts/install/packages/third-party-desktop.packages` | Brave/appindicator packages for full install            |
+| `src/scripts/install/apps/pass-cli.sh`                      | Proton Pass CLI binary install                          |
+| `src/scripts/install/`                                      | `packages/`, `apps/`, `dev/`, `shell/`, `post-install/` |
+| `src/scripts/config/<category>/`                            | Dotfiles/GNOME/system config + `all.sh`                 |
+| `scripts/lib/validate-installs-sections.sh`                 | Shared install validation sections                      |
+| `scripts/lib/validate-config-sections.sh`                   | Shared config validation sections                       |
+| `scripts/validate-installs-cli.sh`                          | Validate CLI-only install outcomes                      |
+| `scripts/validate-installs.sh`                              | Validate full install outcomes                          |
+| `scripts/validate-config-only.sh`                           | Validate config-only outcomes                           |
+| `scripts/validate-config.sh`                                | Validate config after full install/master               |
+| `scripts/validate.sh`                                       | Validate installs + config after master                 |
 
 ## Product and safety constraints
 
-- Fedora defaults to **firewalld** — **`config/security.sh`** disables it before **UFW** to match the Ubuntu playbook; verify this aligns with deployments (servers/Kubernetes hosts may need divergence).
-- **Night Light vs Redshift** conflict remains documented in **`README.md`**.
-- Downloads should continue to funnel through **`download_file_safe`** / vendor-signed repos.
-- Secrets never belong in-repo; prefer **`~/.local_extras`**.
-
-## Testing and CI
-
-- **Test Runner** provisions inside a **`fedora:latest`** Actions container (non-privileged quirks tolerated); **`chmod +x`** all scripts beforehand; **`bash src/scripts/master.sh || true`**; scrub **`setup_errors.log`** similarly to **`ubuntu-setup-scripts`**.
-- Fedora moves quickly — expect occasional COPR/repo URL drift after major releases.
+- Fedora defaults to **firewalld** — `config/security/ufw-rules.sh` disables it before
+  **UFW** to match the Ubuntu playbook; verify this aligns with deployments (servers/Kubernetes
+  hosts may need divergence).
+- **Night Light vs Redshift** conflict remains documented in `README.md`.
+- Downloads should continue to funnel through signed/vendor RPM repos or `curl -fsSL`.
+- Secrets never belong in-repo; prefer `~/.local_extras`.
 
 ## Making changes
 
-| Task                      | Preferred edit                                                                                  |
-| ------------------------- | ----------------------------------------------------------------------------------------------- |
-| Packages/repos/installers | Matching **`install/*.sh`**                                                                     |
-| GNOME / timers / sysctl   | **`config/system-config.sh`**, **`organizeHome.sh`**, **`install/pre-install.sh`** as needed    |
-| Firewall                  | **`config/security.sh`** (policy) plus **`install/security.sh`** (**`ufw`/`openvpn`** packages) |
-| Dotfile parity            | **`config/dev.sh`**, **`config/shell.sh`**                                                      |
-| Shared helpers            | **`utils.sh`**                                                                                  |
+| Task                      | Preferred edit                                                          |
+| ------------------------- | ----------------------------------------------------------------------- |
+| Packages/repos/installers | Matching `install/<category>/<app>.sh` or `install/packages/*.packages` |
+| GNOME / timers / sysctl   | `config/system/gnome-gsettings.sh`, `config/system/system-policy.sh`    |
+| Firewall                  | `config/security/ufw-rules.sh` plus `install/packages/base.packages`    |
+| Dotfile parity            | `config/dev/all.sh`, `config/shell/all.sh`, `config/dotfiles.manifest`  |
+| Shared helpers            | `src/scripts/lib/*.sh`                                                  |
 
 ## Commits and PRs
 
-Only commit when the user asks explicitly. Mention manual QA on Fedora Workstation when altering **`gsettings`**, **`firewalld`**, COPR repos, or Proton tooling.
-
-## Verify before you finish
-
-Before you end a turn where you changed **any** file in this repository (Markdown,
-YAML under **`.github/`**, shell, **`package.json`**, etc.), run the checks below so
-**Prettier**, **markdownlint**, and **yamllint** stay green. Do not finish with failing
-**`npm run lint`** output for paths this repo owns.
-
-**Exception:** work confined to **`src/dotfiles/`** must follow **`src/dotfiles/AGENTS.md`**.
-Submodule-only edits there use that repo’s tooling. If the same turn also changes parent
-Markdown or YAML (for example submodule docs in the readme), **`npm run lint`** still applies
-to the parent checkout.
-
-```bash
-npm install
-
-npm run lint
-
-shellcheck src/scripts/utils.sh \
-  src/scripts/master.sh \
-  src/scripts/run-install.sh \
-  src/scripts/run-config.sh \
-  src/scripts/install/*.sh \
-  src/scripts/config/*.sh
-```
-
-**`npm run lint`** runs **`prettier --check .`**, **`markdownlint-cli2`** on `**/*.md`
-(excluding **`node_modules`** and **`src/dotfiles`**), and **`yamllint`** on **`.github`**,
-**`.yamllint`**, and **`.markdownlint.yaml`**. Install **`yamllint`** locally if missing (for example
-**`pip install yamllint`**).
-
-| If you edited               | Extra checks                                                                       |
-| --------------------------- | ---------------------------------------------------------------------------------- |
-| Markdown at repo root       | Covered by **`npm run lint`**; submodule Markdown uses dotfiles tooling separately |
-| Workflows or lint configs   | **`npm run lint:yaml`**                                                            |
-| **`src/dotfiles/`** subtree | Submodule linters (**`npm ci`** there per dotfiles **`AGENTS.md`**)                |
-
-Pull requests still run **garretpatten/quality-checks**.
+Only commit when the user asks explicitly. Mention manual QA on Fedora Workstation when
+altering `gsettings`, `firewalld`, COPR repos, or Proton tooling.
 
 ## License
 

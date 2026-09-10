@@ -1,0 +1,18 @@
+# RPM repository setup manifest (pipe-delimited).
+# kind|arg1|arg2|...
+#
+# docker
+# brave
+# nodesource|NODE_MAJOR
+# rpm-key|key_url|key_id_grep
+# repo-url|repo_url|repo_file_path
+# copr|owner/project
+# rpmfusion-free
+
+docker
+brave
+nodesource|24
+copr|dejan/lazygit
+copr|atim/lazydocker
+copr|lihaohong/yazi
+rpmfusion-free

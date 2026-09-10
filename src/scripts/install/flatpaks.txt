@@ -1,0 +1,6 @@
+# Flatpak apps (one app ID per line).
+
+com.getpostman.Postman
+com.spotify.Client
+org.signal.Signal
+org.zaproxy.ZAP
