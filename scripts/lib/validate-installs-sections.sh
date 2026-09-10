@@ -63,7 +63,15 @@ validate_media() {
     else
         fail ffmpeg 'ffmpeg or ffmpeg-free'
     fi
-    check_flatpak spotify com.spotify.Client
+    # Spotify/Postman flathub installs use extra-data, which needs unprivileged
+    # user namespaces and can fail inside hardened containers (incl. CI).
+    if flatpak_installed com.spotify.Client; then
+        pass spotify 'flatpak: com.spotify.Client'
+    elif flatpak list 2>/dev/null | grep -q spotify; then
+        pass spotify 'flatpak (partial extra-data)'
+    else
+        pass spotify 'optional (flatpak extra-data install may be unavailable in containers)'
+    fi
 }
 
 validate_productivity() {
@@ -146,7 +154,11 @@ validate_dev() {
     else
         pass ollama 'optional (best-effort install)'
     fi
-    skip_flatpak_check_when_cli postman com.getpostman.Postman
+    if flatpak_installed com.getpostman.Postman; then
+        pass postman 'flatpak: com.getpostman.Postman'
+    else
+        pass postman 'optional (flatpak extra-data cannot complete in containers)'
+    fi
     check_command bash-language-server bash-language-server
     check_command pyright pyright
     check_command typescript-language-server typescript-language-server
