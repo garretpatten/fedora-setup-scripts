@@ -133,6 +133,12 @@ GNOME gsettings scripts no-op without an active GNOME session.
 Only commit when the user asks explicitly. Mention manual QA on Fedora Workstation when
 altering `gsettings`, `firewalld`, COPR repos, or Proton tooling.
 
+## GitHub Actions
+
+Whenever a GitHub workflow is added, all GitHub Action pins in that workflow
+should be updated to point to the full-length commit SHA of the most recent
+release.
+
 ## License
 
 MIT — see [LICENSE](./LICENSE).
