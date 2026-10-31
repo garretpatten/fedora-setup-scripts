@@ -17,4 +17,7 @@ jobs:
       prettier_run: true
       shellcheck_run: true
       yamllint_run: true
-    secrets: inherit
+    # Pass only the secret the reusable workflow uses (secrets.GITHUB_TOKEN);
+    # `secrets: inherit` violates least privilege.
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
