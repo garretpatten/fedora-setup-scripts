@@ -103,7 +103,7 @@ install_dnf_packages_from_file "$DIR/packages/dev.packages"
 
 echo "==> Installing extra dnf packages..."
 install_dnf_packages_from_files optional \
-    "$DIR/packages/griffo.packages" \
+    "$DIR/packages/extra-cli.packages" \
     "$DIR/packages/fastfetch.packages"
 
 if is_desktop; then

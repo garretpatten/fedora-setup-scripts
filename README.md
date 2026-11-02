@@ -251,7 +251,7 @@ Plain-text package lists consumed by `lib/dnf-packages.sh`:
 - `productivity.packages` — `flameshot`, `keepassxc`, `libreoffice`, `redshift`
 - `dev.packages` — `neovim`, `python3` stack
 - `lsp.packages` — build essentials + language runtimes for LSP support
-- `griffo.packages` — `lazygit`, `lazydocker`, `yazi`
+- `extra-cli.packages` — `lazygit`, `lazydocker`, `yazi`
 - `third-party-cli.packages` — Docker CE stack, NodeSource `nodejs`
 - `third-party-desktop.packages` — `brave-browser`, appindicator support
 
