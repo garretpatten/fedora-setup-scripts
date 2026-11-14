@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Replicate CI ShellCheck: changed .sh/.bash/.zsh vs base branch, with -x and .shellcheckrc.
+# Also covers the bats unit tests: *.bats files and the extensionless fakes in tests/stubs/.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -13,7 +14,7 @@ else
     BASE_REF="HEAD~1"
 fi
 
-mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMR "${BASE_REF}"...HEAD | grep -E '\.(sh|bash|zsh)$' || true)
+mapfile -t CHANGED < <(git diff --name-only --diff-filter=ACMR "${BASE_REF}"...HEAD | grep -E '\.(sh|bash|zsh|bats)$|^tests/stubs/' || true)
 
 paths=()
 for file in "${CHANGED[@]}"; do

@@ -1,0 +1,10 @@
+#!/bin/bash
+# Fake git. Lives in its own directory so only tests/lib/git-submodules.bats
+# puts it on PATH (the other tests need real git). Records its arguments.
+#   GIT_STUB_SUBMODULE_STATUS  output of `git submodule status`
+printf 'git %s\n' "$*" >>"${STUB_CALL_LOG:-/dev/null}"
+
+if [[ "${1:-}" == submodule && "${2:-}" == status ]]; then
+    [[ -n "${GIT_STUB_SUBMODULE_STATUS:-}" ]] && printf '%s\n' "$GIT_STUB_SUBMODULE_STATUS"
+fi
+exit 0

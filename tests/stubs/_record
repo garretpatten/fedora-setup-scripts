@@ -1,0 +1,11 @@
+#!/bin/bash
+# Not a stub: sourced by the stubs to append "<name> <args>" to $STUB_CALL_LOG.
+# A stub started through the sudo stub logs "sudo <name> <args>" instead.
+# shellcheck disable=SC2034 # STUB_NAME is used by the sourcing stub.
+STUB_NAME="$(basename "$0")"
+_stub_prefix=""
+if [[ "${STUB_VIA_SUDO:-}" == 1 ]]; then
+    _stub_prefix="sudo "
+    unset STUB_VIA_SUDO
+fi
+printf '%s%s %s\n' "$_stub_prefix" "$STUB_NAME" "$*" >>"${STUB_CALL_LOG:-/dev/null}"

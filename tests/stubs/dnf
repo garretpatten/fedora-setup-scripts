@@ -1,0 +1,27 @@
+#!/bin/bash
+# Fake dnf. Records its arguments.
+#   DNF_STUB_COPR_ENABLED   newline-separated output of `dnf copr list --enabled`
+#   DNF_STUB_FAIL_PACKAGES  space-separated packages that are "unavailable";
+#                           any `dnf install` naming one of them exits 1
+#   DNF_STUB_FAIL_ALL=1     every call except `copr list` exits 1
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+if [[ "${1:-}" == copr && "${2:-}" == list ]]; then
+    [[ -n "${DNF_STUB_COPR_ENABLED:-}" ]] && printf '%s\n' "$DNF_STUB_COPR_ENABLED"
+    exit 0
+fi
+
+[[ "${DNF_STUB_FAIL_ALL:-}" == 1 ]] && exit 1
+
+if [[ "${1:-}" == install ]]; then
+    for arg in "$@"; do
+        for bad in ${DNF_STUB_FAIL_PACKAGES:-}; do
+            if [[ "$arg" == "$bad" ]]; then
+                echo "No match for argument: $bad" >&2
+                exit 1
+            fi
+        done
+    done
+fi
+exit 0
