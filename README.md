@@ -173,6 +173,36 @@ CI runs four jobs in a `fedora:latest` container:
 - `test-full`: `run-install.sh all` → `validate-installs.sh`
 - `test-master`: `master.sh` → `validate.sh` (full installs + config)
 
+## Testing
+
+Tests come in two layers:
+
+- **Unit tests** (`tests/lib/*.bats`, [bats-core](https://github.com/bats-core/bats-core)): fast checks for the sourced helpers in `src/scripts/lib/` (DNF repos and packages, Flatpak, dotfiles, submodules, GNOME detection, `.zshrc` guard, `run_script` / parallel jobs) and for `scripts/check-shellcheck.sh`. Each test runs in a `mktemp -d` sandbox with `HOME`, `TEMP_DIR`, and `PROJECT_ROOT` pointed into it and fake `sudo`, `dnf`, `rpm`, `rpmkeys`, `curl`, `flatpak`, `install`, and `loginctl` from `tests/stubs/` first on `PATH`. No network access and no changes to the host, so they run on any Linux or macOS machine.
+- **Container integration** (the `test-*` jobs above, on `fedora:latest`): real installs and config followed by the `scripts/validate*.sh` gates. This is the only coverage for the leaf scripts under `src/scripts/install/` and `src/scripts/config/`.
+
+Run the unit tests locally with bats-core and its helper libraries:
+
+```bash
+# Fedora: sudo dnf install bats   (then clone the helpers below)
+# macOS:  brew install bats-core
+git clone --depth 1 https://github.com/bats-core/bats-support ~/.bats/bats-support
+git clone --depth 1 https://github.com/bats-core/bats-assert ~/.bats/bats-assert
+git clone --depth 1 https://github.com/bats-core/bats-file ~/.bats/bats-file
+BATS_LIB_PATH=~/.bats bats --recursive tests/
+```
+
+`tests/helpers/setup.bash` also looks for the helper libraries in `/usr/lib`, `/usr/local/lib`, `/usr/lib/bats`, and `/opt/homebrew/lib`.
+
+The `unit-tests` job in `.github/workflows/test-runner.yaml` (ubuntu-latest, no container) runs ShellCheck on `tests/` and then `bats --recursive tests/` on every push and pull request to `master`.
+
+```text
+tests/
+├── lib/<name>.bats      # mirrors src/scripts/lib/ (env.sh is in run.bats), plus check-shellcheck.bats
+├── helpers/setup.bash   # sandbox setup and stub-call assertions
+├── stubs/               # fake binaries that record their calls
+└── fixtures/            # package lists, dotfiles tree, ShellCheck samples
+```
+
 ## Project structure
 
 ```text
@@ -213,7 +243,8 @@ fedora-setup-scripts/
 │   ├── dotfiles/               # submodule
 │   └── assets/
 │       └── fedora.txt          # completion banner
-└── scripts/                    # validation scripts
+├── scripts/                    # validation scripts
+└── tests/                      # bats unit tests (see Testing)
 ```
 
 ### Execution flow (`master.sh`)

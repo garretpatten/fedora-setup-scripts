@@ -35,16 +35,18 @@ chmod +x scripts/check-shellcheck.sh
 ./scripts/check-shellcheck.sh
 ```
 
-That runs `shellcheck -x` on **changed** `*.sh` / `*.bash` / `*.zsh` files vs `origin/master`
+That runs `shellcheck -x` on **changed** `*.sh` / `*.bash` / `*.zsh` / `*.bats` files (plus `tests/stubs/*`) vs `origin/master`
 (matching [quality-checks](https://github.com/garretpatten/quality-checks)). Uses
 `.shellcheckrc` (`external-sources=true`, `source-path=SCRIPTDIR`).
 
-To lint all setup scripts locally:
+To lint all setup scripts and the unit tests locally:
 
 ```bash
 shellcheck -x src/scripts/**/*.sh
 # or
 find src/scripts -name '*.sh' -print0 | xargs -0 shellcheck -x
+find tests -type f \( -name '*.bats' -o -name '*.bash' -o -name '*.sh' \
+  -o -path 'tests/stubs/*' \) -print0 | xargs -0 shellcheck -x
 ```
 
 ### ShellCheck conventions
@@ -70,9 +72,20 @@ npx markdownlint --ignore node_modules '**/*.md'
 yamllint .
 ```
 
+### Unit tests
+
+`tests/lib/<name>.bats` unit-tests the sourced helpers in `src/scripts/lib/<name>.sh`
+(plus `scripts/check-shellcheck.sh`) with [bats-core](https://github.com/bats-core/bats-core),
+bats-support, bats-assert, and bats-file. Run `bats --recursive tests/` (see README "Testing").
+`tests/helpers/setup.bash` gives each test a sandbox `HOME`/`TEMP_DIR`/`PROJECT_ROOT` and
+puts `tests/stubs/` (fake `sudo`, `dnf`, `rpm`, `curl`, `flatpak`, ...) first on `PATH`; tests
+must never touch the network or the host. When you change a `lib/*.sh` helper, update or add
+its tests. Leaf installers under `install/` stay covered by the container jobs only.
+
 ### Test workflow
 
-`.github/workflows/test-runner.yaml` runs four jobs on `fedora:latest`:
+`.github/workflows/test-runner.yaml` runs a fast `unit-tests` job (ubuntu-latest: ShellCheck on
+`tests/`, then `bats --recursive tests/`) and four jobs on `fedora:latest`:
 
 - `test-cli`: `run-install.sh cli` → `scripts/validate-installs-cli.sh`
 - `test-config`: `run-config.sh` → `scripts/validate-config-only.sh`
@@ -93,6 +106,7 @@ GNOME gsettings scripts no-op without an active GNOME session.
 | `src/scripts/lib/dnf-packages.sh`                           | `install_dnf_packages_from_file` helper                 |
 | `src/scripts/lib/dnf-repo-add.sh`                           | RPM repository/key helpers                              |
 | `src/scripts/lib/flatpak-install.sh`                        | Flatpak app install helpers                             |
+| `tests/lib/*.bats`                                          | bats unit tests for `src/scripts/lib/*.sh`              |
 | `src/scripts/install/all.sh`                                | Full install orchestrator (`--cli` for CLI-only)        |
 | `src/scripts/install/cli.sh`                                | Wrapper that runs `install/all.sh --cli`                |
 | `src/scripts/install/packages/*.packages`                   | DNF package lists (one per line)                        |

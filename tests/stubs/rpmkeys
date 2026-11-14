@@ -1,0 +1,5 @@
+#!/bin/bash
+# Fake rpmkeys. Records its arguments.
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+exit 0
