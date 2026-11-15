@@ -275,7 +275,7 @@ The lists below mirror the **`install/`** and **`config/`** split; open each scr
 
 Plain-text package lists consumed by `lib/dnf-packages.sh`:
 
-- `base.packages` — CLI/security essentials: `bat`, `btop`, `eza`, `fd`, `fzf`, `gh`, `htop`, `jq`, `nmap`, `openvpn`, `ripgrep`, `shellcheck`, `tealdeer`, `tree-sitter-cli`, `ufw`, `vim-enhanced`, `zoxide`, ...
+- `base.packages` — CLI/security essentials: `bat`, `btop`, `eza`, `fd`, `fzf`, `gh`, `htop`, `jq`, `nmap`, `openvpn`, `ripgrep`, `shellcheck`, `tldr`, `tree-sitter-cli`, `ufw`, `vim-enhanced`, `zoxide`, ...
 - `shell.packages` — `zsh`, `tmux`, `fontawesome-fonts`, `fira-code-fonts`, `zsh-autosuggestions`, `zsh-syntax-highlighting`
 - `media.packages` — `vlc`, `ffmpeg-free`
 - `desktop.packages` — `gnome-shell-extensions`, `gnome-tweaks`
