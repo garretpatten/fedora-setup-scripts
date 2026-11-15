@@ -1,0 +1,27 @@
+#!/bin/bash
+# Fake flatpak. Records its arguments.
+#   FLATPAK_STUB_INSTALLED  newline-separated output of `flatpak list --app`
+#   FLATPAK_STUB_FAIL       app ids whose install always fails
+#   FLATPAK_STUB_FAIL_ONCE  app ids whose first install attempt fails
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+if [[ "${1:-}" == list ]]; then
+    [[ -n "${FLATPAK_STUB_INSTALLED:-}" ]] && printf '%s\n' "$FLATPAK_STUB_INSTALLED"
+    exit 0
+fi
+
+if [[ "${1:-}" == install ]]; then
+    app_id="${*: -1}"
+    for bad in ${FLATPAK_STUB_FAIL:-}; do
+        [[ "$app_id" == "$bad" ]] && exit 1
+    done
+    for flaky in ${FLATPAK_STUB_FAIL_ONCE:-}; do
+        marker="${SANDBOX:-/tmp}/flatpak-failed-once-$app_id"
+        if [[ "$app_id" == "$flaky" && ! -e "$marker" ]]; then
+            : >"$marker"
+            exit 1
+        fi
+    done
+fi
+exit 0

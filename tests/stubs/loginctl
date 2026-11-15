@@ -1,0 +1,17 @@
+#!/bin/bash
+# Fake loginctl. Records its arguments.
+#   LOGINCTL_STUB_SESSIONS  output of `loginctl list-sessions --no-legend`
+#                           ("SESSION UID USER SEAT TTY" lines)
+#   LOGINCTL_STUB_DESKTOP   value printed by `loginctl show-session ... --value`
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+case "${1:-}" in
+    list-sessions)
+        [[ -n "${LOGINCTL_STUB_SESSIONS:-}" ]] && printf '%s\n' "$LOGINCTL_STUB_SESSIONS"
+        ;;
+    show-session)
+        printf '%s\n' "${LOGINCTL_STUB_DESKTOP:-}"
+        ;;
+esac
+exit 0

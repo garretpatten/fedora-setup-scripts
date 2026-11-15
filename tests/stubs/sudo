@@ -1,0 +1,10 @@
+#!/bin/bash
+# Fake sudo: runs the command unprivileged. PATH still starts with tests/stubs,
+# so dnf/rpmkeys/install resolve to stubs, which log "sudo <cmd> <args>".
+# Commands that are not stubs (e.g. bash) are logged here.
+if [[ -x "$(dirname "$0")/${1:-}" ]]; then
+    export STUB_VIA_SUDO=1
+else
+    printf 'sudo %s\n' "$*" >>"${STUB_CALL_LOG:-/dev/null}"
+fi
+exec "$@"

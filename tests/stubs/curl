@@ -1,0 +1,35 @@
+#!/bin/bash
+# Fake curl. Records its arguments.
+#   CURL_STUB_MODE  success (default): write $CURL_STUB_BODY (or "stub body")
+#                   to the -o file; fail: exit 22 like curl --fail on a 404
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+output=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -o)
+            output="$2"
+            shift 2
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
+
+case "${CURL_STUB_MODE:-success}" in
+    success)
+        if [[ -n "$output" ]]; then
+            printf '%s\n' "${CURL_STUB_BODY:-stub body}" >"$output"
+        fi
+        ;;
+    fail)
+        echo "curl: (22) The requested URL returned error: 404" >&2
+        exit 22
+        ;;
+    *)
+        echo "curl stub: unknown CURL_STUB_MODE '${CURL_STUB_MODE}'" >&2
+        exit 2
+        ;;
+esac

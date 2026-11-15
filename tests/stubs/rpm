@@ -1,0 +1,26 @@
+#!/bin/bash
+# Fake rpm. Records its arguments.
+#   rpm -q gpg-pubkey ...      prints $RPM_STUB_KEYS (newline-separated)
+#   rpm -q <pkg>               exits 0 when <pkg> is in $RPM_STUB_INSTALLED
+#   rpm -E %fedora             prints $RPM_STUB_FEDORA_RELEASE (default: %fedora,
+#                              which is what rpm prints when the macro is unset)
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+case "${1:-}" in
+    -q)
+        if [[ "${2:-}" == gpg-pubkey ]]; then
+            [[ -n "${RPM_STUB_KEYS:-}" ]] && printf '%s\n' "$RPM_STUB_KEYS"
+            exit 0
+        fi
+        for pkg in ${RPM_STUB_INSTALLED:-}; do
+            [[ "$pkg" == "${2:-}" ]] && exit 0
+        done
+        echo "package ${2:-} is not installed"
+        exit 1
+        ;;
+    -E)
+        printf '%s\n' "${RPM_STUB_FEDORA_RELEASE:-%fedora}"
+        ;;
+esac
+exit 0

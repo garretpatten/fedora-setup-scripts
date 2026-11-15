@@ -1,0 +1,19 @@
+#!/bin/bash
+# Fake install(1). Records its arguments. For `install -Dm644 SRC DEST` it
+# copies SRC to DEST only when DEST is inside $SANDBOX, so a test can never
+# write to /etc on the host.
+# shellcheck source=_record
+source "$(dirname "$0")/_record"
+
+args=()
+for arg in "$@"; do
+    [[ "$arg" == -* ]] || args+=("$arg")
+done
+[[ ${#args[@]} -eq 2 ]] || exit 0
+src="${args[0]}"
+dest="${args[1]}"
+if [[ -n "${SANDBOX:-}" && "$dest" == "$SANDBOX"/* ]]; then
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+fi
+exit 0

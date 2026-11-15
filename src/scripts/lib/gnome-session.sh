@@ -21,7 +21,8 @@ gnome_session_active() {
     command -v loginctl >/dev/null 2>&1 || return 1
 
     local sid desktop_name user
-    while read -r sid _ _ user _; do
+    # `loginctl list-sessions --no-legend` columns: SESSION UID USER SEAT TTY ...
+    while read -r sid _ user _; do
         [[ "$user" == "$USER" ]] || continue
         desktop_name=$(loginctl show-session "$sid" -p Desktop --value 2>/dev/null || true)
         if [[ "$desktop_name" == GNOME || "$desktop_name" == gnome ]]; then
